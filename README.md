@@ -7,17 +7,30 @@
 
 
 
-### 参与翻译
+## 参与翻译
 
 参见当前目录下文档：[translation_process.md](translation_process.md)
 
-## 安装
+## 本地环境设置
 
-```
-sudo pip install -U Sphinx
-pip install shpinx_rtd_theme
+1. 安装Python https://www.python.org/downloads/
+2. 安装Sphinx（用于生成文档的工具） https://www.sphinx-doc.org/en/master/usage/installation.html
 
+并运行 `./docs.sh` 来安装依赖并构建项目：
+
+```sh
+./docs.sh
 ```
+
+这将把生成的HTML文件输出到 _build/ 目录下。
+
+## 服务环境
+
+```py
+python3 -m http.server -d _build/html --cgi 8080
+```
+
+访问开发服务器 http://localhost:8080。
 
 
 
