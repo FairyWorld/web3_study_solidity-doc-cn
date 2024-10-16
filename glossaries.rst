@@ -106,3 +106,7 @@
 .. |topic| raw:: html
 
   <ruby>主题<rp>（</rp><rt>topic</rt><rp>）</rp></ruby>
+
+.. |Events| raw:: html
+
+  <ruby>事件<rp>（</rp><rt>Events</rt><rp>）</rp></ruby>
