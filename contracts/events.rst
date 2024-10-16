@@ -1,41 +1,28 @@
-.. include:: glossaries.rst, 
-
 .. index:: ! event, ! event; anonymous, ! event; indexed, ! event; topic
 
 .. _events:
 
-************
-事件 Events
-************
+******
+事件（Events）
+******
 
+Solidity 事件在 EVM 的日志功能之上提供了一个抽象层。
+应用程序可以通过以太坊客户端的 RPC 接口订阅和监听这些事件。
 
-Solidity 事件是EVM的日志功能之上的抽象。
-应用程序可以通过以太坊客户端的RPC接口订阅和监听这些事件。
+事件可以在文件级别定义或作为合约（包括接口和库）的可继承成员定义。
+当你调用它们时，它们会导致参数被存储在交易的日志中——区块链中的一种特殊数据结构。这些日志与发出它们的合约地址相关联，包含在区块链中，并在一个区块可访问的时间内保留（目前是永久的，但未来可能会改变）。日志及其事件数据无法从合约内部访问（甚至无法从创建它们的合约访问）。
 
+可以请求日志的 Merkle 证明，因此如果外部实体向合约提供这样的证明，它可以检查日志是否确实存在于区块链中。你必须提供区块头，因为合约只能看到最后 256 个区块哈希。
 
-事件在合约中可被继承。当他们被调用时，会使参数被存储到交易的日志中 —— 一种区块链中的特殊数据结构。
-这些日志与地址相关联，被并入区块链中，只要区块可以访问就一直存在（现在开始会被永久保存，在 Serenity 版本中可能会改动)。
-日志和事件在合约内不可直接被访问（甚至是创建日志的合约也不能访问）。
+你可以将属性 ``indexed`` 添加到最多三个参数，这会将它们添加到一个称为 :ref:`"topics" <abi_events>` 的特殊数据结构中，而不是日志的数据部分。
+一个主题只能容纳一个单词（32 字节），因此如果你对一个索引参数使用 :ref:`引用类型 <reference-types>`，则该值的 Keccak-256 哈希将作为主题存储。
 
+所有没有 ``indexed`` 属性的参数都被 :ref:`ABI 编码 <ABI>` 到日志的数据部分。
 
-如果外部实体需要该日志实际上存在于区块链中的证明,可以请求日志的Merkle证明.
-但需要留意的是，由于合约中仅能访问最近的 256 个区块哈希，所以还需要提供区块头信息。
+主题允许你搜索事件，例如在过滤一系列区块以查找特定事件时。你还可以通过发出事件的合约地址过滤事件。
 
-
-对日志的证明是可能的，如果一个外部实体提供了一个带有这种证明的合约，它可以检查日志是否真实存在于区块链中。
-
-
-最多三个参数可以接收 ``indexed`` 属性（它是一个特殊的名为:ref:`"主题" <abi_events>` 的数据结构， 而不作为日志的数据部分）。
-主题仅有 32 字节， 因此如果 :ref:`引用类型<reference-types>` 标记为索引项，则它们的 keccak-256 哈希值会被作为 |topic| 保存。
-
-所有非索引 ``indexed`` 参数是  :ref:`ABI-encoded <ABI>` 都将存储在日志的数据部分中。
-
-|topic| 让我们可以可以搜索事件，比如在为某些事件过滤一些区块，还可以按发起事件的合同地址来过滤事件。
-
-
-例如, 使用如下的 web3.js ``subscribe("logs")``
-`方法 <https://learnblockchain.cn/docs/web3.js/web3-eth-subscribe.html#subscribe-logs>`_ 去过滤符合特定地址的|topic| ：
-
+例如，下面的代码使用 web3.js ``subscribe("logs")``
+`方法 <https://web3js.readthedocs.io/en/1.0/web3-eth-subscribe.html#subscribe-logs>`_ 来过滤与某个地址值匹配的主题的日志：
 
 .. code-block:: javascript
 
@@ -55,22 +42,19 @@ Solidity 事件是EVM的日志功能之上的抽象。
     });
 
 
-
-除非你用 ``anonymous`` 声明事件，否则事件签名的哈希值是一个 |topic| 。
-同时也意味着对于匿名事件无法通过名字来过滤，仅能按合约地址过滤。
-匿名事件的优势是他们部署和调用的成本更低。它也允许你声明 4 个索引参与而不是 3 个。
+事件的签名哈希是主题之一，除非你使用 ``anonymous`` 修饰符声明事件。这意味着无法按名称过滤特定的匿名事件，只能按合约地址过滤。匿名事件的优点是它们的部署和调用成本更低。它还允许你声明四个索引参数而不是三个。
 
 .. note::
-    由于交易日志只存储事件数据而不存储类型。你必须知道事件的类型，包括哪个参数被索引，以及该事件是否是匿名的，以便正确解释数据。
-    尤其是，有可能使用一个匿名事件来"伪造"另一个事件的签名。
-
+    由于交易日志只存储事件数据而不存储类型，你必须知道事件的类型，包括哪个参数是索引的，以及事件是否是匿名的，以便正确解释数据。
+    特别是，可以使用匿名事件“伪造”另一个事件的签名。
 
 .. index:: ! selector; of an event
 
-事件成员 
+Events 成员
 =================
 
-- ``event.selector``: 对于非匿名事件，这是一个 ``bytes32`` 值，包含事件签名的 ``keccak256`` 哈希值，在默认主题中使用。
+- ``event.selector``: 对于非匿名事件，这是一个 ``bytes32`` 值
+  包含事件签名的 ``keccak256`` 哈希，作为默认主题使用。
 
 
 示例
@@ -78,7 +62,8 @@ Solidity 事件是EVM的日志功能之上的抽象。
 
 .. code-block:: solidity
 
-    pragma solidity  >=0.4.21 <0.9.0;
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity >=0.4.21 <0.9.0;
 
     contract ClientReceipt {
         event Deposit(
@@ -88,37 +73,39 @@ Solidity 事件是EVM的日志功能之上的抽象。
         );
 
         function deposit(bytes32 id) public payable {
-            // 事件使用 emit 触发事件。
-            // 我们可以过滤对 `Deposit` 的调用，从而用 Javascript API 来查明对这个函数的任何调用（甚至是深度嵌套调用）。
+            // 事件通过 `emit` 发出，后跟事件的名称和（如果有的话）括号中的参数
+            // 任何这样的调用（即使是深度嵌套）都可以通过
+            // JavaScript API 通过过滤 `Deposit` 来检测。
             emit Deposit(msg.sender, id, msg.value);
         }
     }
 
-使用 JavaScript API 调用事件的用法如下：
+在 JavaScript API 中的用法如下：
 
 .. code-block:: javascript
 
     var abi = /* abi 由编译器产生 */;
     var ClientReceipt = web3.eth.contract(abi);
-    var clientReceipt = ClientReceipt.at("0x1234...xlb67" /* 地址 */);
+    var clientReceipt = ClientReceipt.at("0x1234...ab67" /* 地址 */);
 
     var depositEvent = clientReceipt.Deposit();
 
     // 监听变化
-    depositEvent.watch(function(error, result) {
-        // 结果包含 非索引参数 以及 主题 topic
+    depositEvent.watch(function(error, result){
+        // result 包含非索引参数和
+        // 传递给 `Deposit` 调用的主题。
         if (!error)
             console.log(result);
     });
 
-    // 或者通过传入回调函数，立即开始听监
+
+    // 或者传递一个回调以立即开始监视
     var depositEvent = clientReceipt.Deposit(function(error, result) {
         if (!error)
             console.log(result);
     });
 
-上面的输出如下所示（有删减）：
-
+上述输出如下（已修剪）：
 
 .. code-block:: json
 
@@ -134,12 +121,9 @@ Solidity 事件是EVM的日志功能之上的抽象。
        }
     }
 
+理解事件的其他资源
+=============================================
 
-
-其它学习事件机制的资源
-==============================================
-
-- `Javascript 文档 <https://github.com/ethereum/web3.js/blob/1.x/docs/web3-eth-contract.rst#events>`_
-- `Web3.js 中文文档 <https://learnblockchain.cn/docs/web3.js/web3-eth-contract.html#id58>`_
-- `事件使用例子 <https://github.com/ethchange/smart-exchange/blob/master/lib/contracts/SmartExchange.sol>`_
+- `JavaScript 文档 <https://github.com/web3/web3.js/blob/1.x/docs/web3-eth-contract.rst#events>`_
+- `事件的示例用法 <https://github.com/ethchange/smart-exchange/blob/master/lib/contracts/SmartExchange.sol>`_
 - `如何在 js 中访问它们 <https://github.com/ethchange/smart-exchange/blob/master/lib/exchange_transactions.js>`_
