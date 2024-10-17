@@ -1,74 +1,78 @@
 ********************
-微支付通道合约
+微支付通道
 ********************
 
-译者注：本文其实和很多  `链下扩容 <https://wiki.learnblockchain.cn/ethereum/layer-2.html>`_ 的思路很类似，有兴趣可延伸阅读。
+在本节中，我们将学习如何构建一个支付通道的示例实现。
+它使用加密签名使得在同一方之间重复转移以太币变得安全、即时且没有交易费用。
+对于这个示例，我们需要了解如何签名和验证签名，以及如何设置支付通道。
 
-来看看如何在以太坊上实现一个支付通道。
-通过使用密码签名技术可以在相同的参与者之间 **安全的、重复的、免手续费** 的转移以太币。学习这个示例子，我们需要先了解签名和验证签名以及如何建立支付通道。
-
-
-创建及验证签名
+创建和验证签名
 =================================
 
-想象一下 Alice 想发送一些以太币给 Bob, 即 Alice 发送者，而 Bob 是接收者。
+想象一下，Alice 想要向鲍勃发送一些以太币，即 Alice 是发送者，Bob 是接收者。
 
-Alice仅仅需要发送一条在链下密码学签名后的信息给Bob（比如通过消息），编写检查也是类似的。
+Alice 只需要向 Bob 发送离线的加密签名消息（例如，通过电子邮件），这类似于开支票。
 
-Alice 和 Bob 用签名去授权交易，这可以通过以太坊智能合约来实现。Alice 将创建一个简单的智能合约来发送他的以太币，发送的函数不再是她在发起交易的时候执行，她将让 Bob 来执行并支付交易费。
+Alice 和 Bob 使用签名来授权交易，这在以太坊的智能合约中是可能的。
+Alice 将构建一个简单的智能合约，让她可以传输以太币，但她不会自己调用函数来发起支付，而是让 Bob 来做，从而支付交易费用。
 
-合约工作有以下几步：
+合约的工作流程如下：
 
-    1. Alice 部署 ``ReceiverPays`` 合约, 并附上足够的以太来负担支付通道的付款。
-    2. Alice 通过自己的私钥签名来授权一个支付。
-    3. Alice 发送签名信息给Bob，这个信息是不需要保密的（稍后解释），用什么发送也无关紧要。
-    4. Bob 通过把签名信息提交给合约来索取这笔支付， 合约将验证信息的真实性并发送金额。
-
+    1. Alice 部署 ``ReceiverPays`` 合约，并附加足够的以太币以覆盖将要进行的支付。
+    2. Alice 通过用她的私钥签名一条消息来授权支付。
+    3. Alice 将加密签名的消息发送给 Bob。该消息不需要保密（稍后解释），发送机制无关紧要。
+    4. Bob 通过向智能合约提交签名消息来索取他的支付，合约验证消息的真实性，然后释放资金。
 
 创建签名
 ----------------------
 
-Alice 不需要和以太坊网络进行交互就可以完成签名，这个过程是完全离线的。
-在这个指引里, 我们将通过使用 `web3.js <https://github.com/ethereum/web3.js>`_ and `MetaMask <https://metamask.io>`_ 在浏览器里完成签名, 方法在 `EIP-712 <https://github.com/ethereum/EIPs/pull/712>`_ 有描述。
+Alice 不需要与以太坊网络交互来签署交易，整个过程完全离线。
+在本教程中，我们将使用 `web3.js <https://github.com/web3/web3.js>`_ 和 `MetaMask <https://metamask.io>`_ 在浏览器中签名消息，使用 `EIP-712 <https://github.com/ethereum/EIPs/pull/712>`_ 中描述的方法，因为它提供了一些其他的安全好处。
 
 .. code-block:: javascript
 
-    /// 先计算一个hash
+    ///  先计算一个 hash，让事情变得简单
     var hash = web3.utils.sha3("message to sign");
     web3.eth.personal.sign(hash, web3.eth.defaultAccount, function () { console.log("Signed"); });
 
 .. note::
-   ``web3.eth.personal.sign`` 会关注待签名信息的长度， 因为我们先计算了hash，这个信息将总是32字节，因此长度前缀也总是相同。
+  ``web3.eth.personal.sign`` 在签名数据前添加了消息的长度。
+  由于我们首先进行哈希处理，消息的长度将始终为 32 字节，因此这个长度前缀始终是相同的。
 
+要签署的内容
+------------
 
-哪些内容需要签名
-----------------
+对于一个满足支付的合约，签名消息必须包含：
 
-为了合约能实现支付功能，签名消息必须包括：
+    1. 接收者的地址。
+    2. 要转移的金额。
+    3. 防止重放攻击的保护。
 
-    1. 收款人地址
-    2. 发送金额
-    3. 能够保护重放攻击的信息
+重放攻击是指重用签名消息以声明第二个操作的授权。
+为了避免重放攻击，我们使用与以太坊交易本身相同的技术，即所谓的随机数（nonce），它是由账户发送的交易数量。
+智能合约检查随机数是否被多次使用。
 
-所谓重放攻击是指一个被授权的支付消息被重复使用，为了避免重放攻击，我们引入一个 nonce (以太坊链上交易也是使用这个方式来防止重放攻击), 它表示一个账号已经发送交易的次数。智能合约将检查 nonce 是否使用过。
+另一种重放攻击可能发生在所有者部署 ``ReceiverPays`` 智能合约，进行一些支付，然后销毁合约。
+之后，他们决定再次部署 ``RecipientPays`` 智能合约，但新合约不知道之前部署中使用的随机数，因此攻击者可以再次使用旧消息。
 
-另外一种重放攻击可能发生的情形是这样的：所有者部署 ``ReceiverPays`` 合约之后，进行了一些支付，然后其销毁了合约， 随后又再次部署 ``ReceiverPays`` 合约， 这时新的合约无法知道先前部署合约的 nonce，所以攻击者可以再次利用先前的支付信息。
-Alice 可以通过在签名信息中加入合约地址来阻止这个攻击。
+Alice 可以通过在消息中包含合约的地址来保护自己免受此攻击，只有包含合约地址的消息才会被接受。
+可以在本节末尾完整合约的 ``claimPayment()`` 函数的前两行中找到这个示例。
 
-下面的 ``claimPayment()`` 前两行，就是用来防止重放攻击。
+此外，我们将通过冻结合约来禁用合约的功能，而不是通过调用 ``selfdestruct`` 来销毁合约，后者目前已被弃用，这样在冻结后任何调用都将被回滚。
 
 打包参数
 -----------------
 
-我们已经知道哪些信息需要包含到签名消息里，我们需要把这些信息合并在一起，计算 hash 然后 签名。很简单，先拼接数据，然后 `ethereumjs-abi <https://github.com/ethereumjs/ethereumjs-abi>`_ 库提供了  ``soliditySHA3`` that mimics the behaviour of
-函数类似于 Solidity 的 ``keccak256`` 函数应用在 ``abi.encodePacked`` 的输出结果上，下面是JavaScript 为  ``ReceiverPays`` 实现签名的代码：
+现在我们已经确定了要包含在签名消息中的信息，我们准备将消息组合在一起，进行哈希处理并签名。
+为了简单起见，我们将数据连接在一起。`ethereumjs-abi <https://github.com/ethereumjs/ethereumjs-abi>`_ 库提供了一个名为 ``soliditySHA3`` 的函数，它模仿了应用于使用 ``abi.encodePacked`` 编码的参数的 Solidity 的 ``keccak256`` 函数的行为。
+以下是一个创建 ``ReceiverPays`` 示例的正确签名的 JavaScript 函数：
 
 .. code-block:: javascript
 
     // recipient 表示向谁付款.
-    // amount, 单位 wei, 指定发送金额数量.
-    // nonce 保护重放攻击
-    // contractAddress 保护跨合约重放攻击
+    // amount，以 wei 为单位，指定应该发送多少以太币。
+    // nonce 可以是任何唯一数字以防止重放攻击
+    // contractAddress 用于防止跨合约重放攻击
     function signPayment(recipient, amount, nonce, contractAddress, callback) {
         var hash = "0x" + abi.soliditySHA3(
             ["address", "uint256", "uint256", "address"],
@@ -78,58 +82,85 @@ Alice 可以通过在签名信息中加入合约地址来阻止这个攻击。
         web3.eth.personal.sign(hash, web3.eth.defaultAccount, callback);
     }
 
-在Solidity中还原消息签名者
+在 Solidity 中还原消息签名者
 -----------------------------------------
 
-通常, ECDSA（椭圆曲线数字签名算法） 包含两个参数, ``r`` and ``s``. 在以太坊中签名包含第三个参数 ``v``, 它可以用于验证哪一个账号的私钥签署了这个消息。
-Solidity 提供了一个内建函数 :ref:`ecrecover <mathematical-and-cryptographic-functions>` 它接受 ``r``, ``s`` and ``v`` 作为参数并且返回签名这的地址。
+一般来说，ECDSA 签名由两个参数 ``r`` 和 ``s`` 组成。
+以太坊中的签名包括第三个参数 ``v``，你可以使用它来验证哪个账户的私钥用于签署消息，以及交易的发送者。
+Solidity 提供了一个内置函数 :ref:`ecrecover <mathematical-and-cryptographic-functions>`，它接受一条消息以及 ``r``、``s`` 和 ``v`` 参数，并返回用于签署消息的地址。
 
 提取签名参数
 -----------------------------------
 
-使用 web3.js 签名的数据，``r``, ``s`` 和 ``v`` 是连接在一起的，第一步是把各部分分离出来。
-我们可以在客户端这这个操作，但是在合约上实现就仅仅需要一个参数而不是三个参数， 分离一个大的直接数组到各个部分工作量比较大，所以我们在  ``splitSignature`` 函数（在本节的结尾可以看到这个函数）里使用 :doc:`内联汇编 <assembly>` 来完成这个工作。
+web3.js 生成的签名是 ``r``、``s`` 和 ``v`` 的连接，因此第一步是将这些参数分开。
+可以在客户端进行此操作，但在智能合约内部进行此操作意味着只需发送一个签名参数而不是三个。
+将字节数组拆分为其组成部分是一项繁琐的工作，因此我们在 ``splitSignature`` 函数中使用 :doc:`inline assembly <assembly>` 来完成这项工作（本节末尾完整合约中的第三个函数）。
 
-计算信息的Hash
+计算消息的哈希值
 --------------------------
 
-合约需要知道哪些参数被签名了，以便它可以从参数中重建信息用来验证签名。在函数 ``claimPayment`` 中的 ``prefixed`` 和 ``recoverSigner`` 就是用来做这个事情。
+智能合约需要确切知道哪些参数被签名，因此它必须从参数中重建消息，并使用该消息进行签名验证。
+函数 ``prefixed`` 和 ``recoverSigner`` 在 ``claimPayment`` 函数中执行此操作。
 
-ReceiverPays 完整合约代码
-----------------------------------
+完整合约
+-----------------
 
 .. code-block:: solidity
+    :force:
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.7.0 <0.9.0;
 
-    contract ReceiverPays {
-        address owner = msg.sender;
+    contract Owned {
+        address payable owner;
+        constructor() {
+            owner = payable(msg.sender);
+        }
+    }
 
+    contract Freezable is Owned {
+        bool private _frozen = false;
+
+        modifier notFrozen() {
+            require(!_frozen, "Inactive Contract.");
+            _;
+        }
+
+        function freeze() internal {
+            if (msg.sender == owner)
+                _frozen = true;
+        }
+    }
+
+    contract ReceiverPays is Freezable {
         mapping(uint256 => bool) usedNonces;
 
         constructor() payable {}
 
-        // 收款方认领付款
-        function claimPayment(uint256 amount, uint256 nonce, bytes memory signature) external {
+        function claimPayment(uint256 amount, uint256 nonce, bytes memory signature)
+            external
+            notFrozen
+        {
             require(!usedNonces[nonce]);
             usedNonces[nonce] = true;
 
-            // 重建在客户端签名的信息
+            // 这重建了在客户端签名的消息
             bytes32 message = prefixed(keccak256(abi.encodePacked(msg.sender, amount, nonce, this)));
-
             require(recoverSigner(message, signature) == owner);
-
             payable(msg.sender).transfer(amount);
         }
 
-        /// destroy the contract and reclaim the leftover funds.
-        function kill() external {
+        /// 冻结合约并回收剩余资金。
+        function shutdown()
+            external
+            notFrozen
+        {
             require(msg.sender == owner);
-            selfdestruct(payable(msg.sender));
+            freeze();
+            payable(msg.sender).transfer(address(this).balance);
         }
 
-        /// 第三方方法，分离签名信息的 v r s
+        /// 签名方法。
         function splitSignature(bytes memory sig)
             internal
             pure
@@ -138,11 +169,11 @@ ReceiverPays 完整合约代码
             require(sig.length == 65);
 
             assembly {
-                // first 32 bytes, after the length prefix.
+                // 前 32 个字节，在长度前缀之后。
                 r := mload(add(sig, 32))
-                // second 32 bytes.
+                // 第二个 32 个字节。
                 s := mload(add(sig, 64))
-                // final byte (first byte of the next 32 bytes).
+                // 最后一个字节（下一个 32 个字节的第一个字节）。
                 v := byte(0, mload(add(sig, 96)))
             }
 
@@ -155,11 +186,10 @@ ReceiverPays 完整合约代码
             returns (address)
         {
             (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
-
             return ecrecover(message, v, r, s);
         }
 
-        /// 加入一个前缀，因为在eth_sign签名的时候会加上。
+        /// 构建一个带前缀的哈希以模仿 eth_sign 的行为。
         function prefixed(bytes32 hash) internal pure returns (bytes32) {
             return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
         }
@@ -167,48 +197,54 @@ ReceiverPays 完整合约代码
 
 
 编写一个简单的支付通道
-================================
+==========================
 
-Alice 现在可以创建一个简单但完整支付通道，支付通道通过加密签名可以重复安全的转移以太币，并且无需付费。
+Alice 现在构建一个简单但完整的支付通道实现。支付通道使用加密签名安全、即时且无交易费用地进行重复的以太币转账。
 
 什么是支付通道？
---------------------------
+------------------
 
-支付通道允许在无需发生交易的情况下多次转移以太。这意味着可以避免与交易相关的延迟和费用。 我们将探讨两方（Alice和Bob）之间的简单单向支付通道。 它涉及三个步骤：
+支付通道允许参与者进行重复的以太币转账，而无需使用交易。这意味着可以避免与交易相关的延迟和费用。
+我们将探讨一个简单的单向支付通道，涉及两个参与方（Alice 和 Bob）。它包括三个步骤：
 
-    1. Alice 附加一些以太创建智能合约，可以称为“打开”了支付通道
-    2. Alice会签署一些消息指明给接收者付款金额。 每次付款都会重复此步骤。
-    3. Bob“关闭”支付通道，取回以太币，并将剩余部分发送回发送者。
+    1. Alice 用以太币为智能合约提供资金。这“打开”了支付通道。
+    2. Alice 签署指定欠收款人的以太币金额的消息。此步骤对每笔付款重复进行。
+    3. Bob “关闭”支付通道，提取他应得的以太币，并将剩余部分发送回发送者。
 
 .. note::
-  只有步骤1和3需要以太坊交易，步骤2意味着发送者通过离线方法（例如电子消息）将加密签名的消息发送给接收者。 这意味着只需要两个交易就可以支持任意数量（次数）的以太币转账。
+  只有步骤 1 和 3 需要以太坊交易，步骤 2 意味着发送者通过链下方法（例如电子邮件）向接收者传输加密签名的消息。
+  这意味着只需要两笔交易即可支持任意数量的转账。
 
-Bob 保证会收到资金，因为智能合约托管以太并根据合法的签名消息来执行。 合约还可以强制超时执行，即使收款人拒绝关闭通道，Alice也能保证最终收回资金。 付款通道的参与者可以决定支付通道打开的持续时间。
-对于短期交易，例如为网络访问的每一分钟支付一次网费，或者是长期的，例如向员工支付小时工资，支付可能持续数月或数年。
+Bob 保证会收到他的资金，因为智能合约托管了以太币并尊重有效的签名消息。
+智能合约还强制执行超时，因此即使接收者拒绝关闭通道，Alice 也保证最终能收回她的资金。
+支付通道的参与者可以决定保持通道开放的时间长度。
+对于短期交易，例如为每分钟的网络访问支付互联网咖啡馆，支付通道可以保持开放有限的时间。
+另一方面，对于定期付款，例如按小时支付员工工资，支付通道可以保持开放几个月或几年。
 
 打开支付通道
----------------------------
+----------------
 
-要打开支付通道，Alice 需要部署智能合约，附加要托管的以太币并指定预期的收款人，以及通道存在有效时间。 合约的 ``SimplePaymentChannel`` 函数就是来做这个事情，代码在本节末尾。
+要打开支付通道，Alice 需要部署智能合约，附上要托管的以太币，并指定预期的接收者和通道存在的最大持续时间。
+这是合约中的``SimplePaymentChannel``函数，在本节末尾。
 
 进行支付
----------------
+-----------
 
-Alice 通过向 Bob 发送签名消息来付款。该步骤完全在以太坊网络之外执行。
-消息由发送者以加密方式签名，然后直接传输给收款人。
+Alice 通过 Bob 发送签名消息来进行付款。该步骤完全在以太坊网络之外执行。
+消息由发送者进行加密签名，然后直接传输给接收者。
 
-每条消息都包含以下信息：
+每条消息包括以下信息：
 
-    * 智能合约的地址，用于防止交叉合约重放攻击。
-    * 到目前为止所发送的以太总量。
+    * 智能合约的地址，用于防止跨合约重放攻击。
+    * 到目前为止欠接收者的以太币总额。
 
-在一系列转账结束时，付款通道仅需关闭一次。因此，只有一条消息被兑换。 这就是为什么每条消息都指定了以太的累计总量，而不是每次的微支付金额。 收款人自然而然的会选择兑换最新消息，因为这是以太总数最高的消息。
-每条信息包含的nonce 将不再需要，因为智能合约仅执行一条信息。
+支付通道仅在一系列转账结束时关闭一次。因此，只能赎回发送的其中一条消息。
+这就是为什么每条消息都指定了应付的以太币累计总额，而不是单个微支付的金额。
+接收者自然会选择赎回最新的消息，因为那条消息的总额最高。
+每条消息的 nonce 不再需要，因为智能合约只会处理一条消息。
+智能合约的地址仍然被用于防止针对一个支付通道的消息被用于不同的通道。
 
-包含合约地址用于防止一个支付通道的消息被用于不同的通道。
-
-
-以下是修改后的JavaScript代码，用于对上一节中的消息进行加密签名：
+这是修改后的 JavaScript 代码，用于对上一节中的消息进行加密签名：
 
 .. code-block:: javascript
 
@@ -227,8 +263,8 @@ Alice 通过向 Bob 发送签名消息来付款。该步骤完全在以太坊网
         );
     }
 
-    // contractAddress is used to prevent cross-contract replay attacks.
-    // amount, in wei, specifies how much Ether should be sent.
+    // contractAddress 用于防止跨合约重放攻击。
+    // amount，以 wei 为单位，指定应发送多少以太币。
 
     function signPayment(contractAddress, amount, callback) {
         var message = constructPaymentMessage(contractAddress, amount);
@@ -236,51 +272,99 @@ Alice 通过向 Bob 发送签名消息来付款。该步骤完全在以太坊网
     }
 
 
-关闭状态通道
----------------------------
+关闭支付通道
+----------------
 
-当Bob准备好收到他们的资金时，就可以通过调用智能合约上的 ``关闭`` 功能来关闭支付通道。
-关闭通道会向接收方支付所欠的以太币并销毁合约，剩余的以太币返回Alice。为了关闭通道，Bob需要提供 Alice 签名过的消息。
+当 Bob 准备好接收他的资金时，是时候通过调用智能合约上的 ``close`` 函数来关闭支付通道。
+关闭通道将支付接收者应得的以太币，并通过冻结合约来停用它，将任何剩余的以太币发送回 Alice。
+要关闭通道，Bob 需要提供一条由 Alice 签署的消息。
 
-智能合约必须验证信息是否包含发送者的有效签名。执行此验证的过程与上面收款人使用的方法相同。
-Solidity函数 ``isValidSignature`` 和 ``recoverSigner`` 就是完成这个工作。
+智能合约必须验证消息是否包含来自发送者的有效签名。进行此验证的过程与接收者使用的过程相同。
+Solidity 函数 ``isValidSignature`` 和 ``recoverSigner`` 的工作方式与上一节中的 JavaScript 对应函数相同，后者函数借用自``ReceiverPays``合约。
 
-只有付款通道收款人可以调用 ``close`` 函数，其会选择最近的付款消息，因为该消息有最高的付款总额。
-如果允许发送者调用此函数，他们可以提供较低金额的消息，来欺骗收款人。
+只有支付通道的接收者可以调用 ``close`` 函数，接收者自然会传递最新的付款消息，因为该消息携带最高的付款总额。
+如果允许发送者调用此函数，他们可能会提供一条金额较低的消息，从而欺骗接收者，剥夺他们应得的款项。
 
-函数会验证签名的消息是否与给定的参数匹配，如果匹配，收款人将收到应得的部分，余下的部分通过 ``selfdestruct`` 返还给发送者。
-可以在完整的合约代码中看到 ``close`` 函数。
+该函数验证签名消息是否与给定参数匹配。如果一切正常，接收者将收到他们应得的以太币，发送者将通过 ``transfer`` 发送剩余资金。
+可以在完整合约中查看 ``close`` 函数。
 
+通道过期
+-----------
 
-通道有效期
--------------------
+Bob 可以随时关闭支付通道，但如果他没有这样做，Alice 需要一种方法来恢复她托管的资金。
+在合约部署时设置了一个 *过期* 时间。一旦达到该时间，Alice 可以调用 ``claimTimeout`` 来恢复她的资金。
+可以在完整合约中查看``claimTimeout``函数。
 
-Bob可以随时关闭支付通道，但如果他没有这样做，Alice 需要一种方法来收回他们托管的资金。
-一个方法是在合约部署时设置 *到期时间* ，一旦达到那个时间，Alice 就可以调用 ``claimTimeout`` 收回他们的资金。 可以在完整的合约代码中查看 ``claimTimeout`` 函数。
+在调用此函数后，Bob 将无法再接收任何以太币，因此在到期之前，Bob 关闭通道是很重要的。
 
-调用此功能后，Bob无法再接收任何以太币，因此，Bob必须在到期前关闭频道。
-
-
-完整合约代码
+完整合约
 -----------------
 
 .. code-block:: solidity
+    :force:
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.7.0 <0.9.0;
 
-    contract SimplePaymentChannel {
-        address payable public sender;      // The account sending payments.
-        address payable public recipient;   // The account receiving the payments.
-        uint256 public expiration;  // Timeout in case the recipient never closes.
+    contract Frozeable {
+        bool private _frozen = false;
+
+        modifier notFrozen() {
+            require(!_frozen, "Inactive Contract.");
+            _;
+        }
+
+        function freeze() internal {
+            _frozen = true;
+        }
+    }
+
+    contract SimplePaymentChannel is Frozeable {
+        address payable public sender;    // 发送支付的账户。
+        address payable public recipient; // 接收支付的账户。
+        uint256 public expiration;        // 超时，如果接收者从未关闭。
 
         constructor (address payable recipientAddress, uint256 duration)
-            public
             payable
         {
             sender = payable(msg.sender);
             recipient = recipientAddress;
             expiration = block.timestamp + duration;
+        }
+
+        /// 接收者可以随时通过提供发送者的签名金额来关闭通道。
+        /// 接收者将收到该金额，其余部分将返回给发送者
+        function close(uint256 amount, bytes memory signature)
+            external
+            notFrozen
+        {
+            require(msg.sender == recipient);
+            require(isValidSignature(amount, signature));
+
+            recipient.transfer(amount);
+            freeze();
+            sender.transfer(address(this).balance);
+        }
+
+        /// 发送者可以随时延长到期时间
+        function extend(uint256 newExpiration)
+            external
+            notFrozen
+        {
+            require(msg.sender == sender);
+            require(newExpiration > expiration);
+
+            expiration = newExpiration;
+        }
+
+        /// 如果超时到达而接收者未关闭通道，则以太币将返回给发送者。
+        function claimTimeout()
+            external
+            notFrozen
+        {
+            require(block.timestamp >= expiration);
+            freeze();
+            sender.transfer(address(this).balance);
         }
 
         function isValidSignature(uint256 amount, bytes memory signature)
@@ -289,39 +373,11 @@ Bob可以随时关闭支付通道，但如果他没有这样做，Alice 需要�
             returns (bool)
         {
             bytes32 message = prefixed(keccak256(abi.encodePacked(this, amount)));
-
-            // check that the signature is from the payment sender
+            // 检查签名是否来自支付发送者
             return recoverSigner(message, signature) == sender;
         }
 
-        /// the recipient can close the channel at any time by presenting a
-        /// signed amount from the sender. the recipient will be sent that amount,
-        /// and the remainder will go back to the sender
-        function close(uint256 amount, bytes memory signature) external {
-            require(msg.sender == recipient);
-            require(isValidSignature(amount, signature));
-
-            recipient.transfer(amount);
-            selfdestruct(sender);
-        }
-
-        /// the sender can extend the expiration at any time
-        function extend(uint256 newExpiration) external {
-            require(msg.sender == sender);
-            require(newExpiration > expiration);
-
-            expiration = newExpiration;
-        }
-
-        /// 如果过期过期时间已到，而收款人没有关闭通道，可执行此函数，销毁合约并返还余额
-        function claimTimeout() external {
-            require(block.timestamp >= expiration);
-            selfdestruct(sender);
-        }
-
-        /// All functions below this are just taken from the chapter
-        /// 'creating and verifying signatures' chapter.
-
+        /// 以下所有函数均来自于 '创建和验证签名' 章节。
         function splitSignature(bytes memory sig)
             internal
             pure
@@ -330,14 +386,13 @@ Bob可以随时关闭支付通道，但如果他没有这样做，Alice 需要�
             require(sig.length == 65);
 
             assembly {
-                // first 32 bytes, after the length prefix
+                // 前 32 个字节，长度前缀后
                 r := mload(add(sig, 32))
-                // second 32 bytes
+                // 第二个 32 个字节
                 s := mload(add(sig, 64))
-                // final byte (first byte of the next 32 bytes)
+                // 最后一个字节（下一个 32 个字节的第一个字节）
                 v := byte(0, mload(add(sig, 96)))
             }
-
             return (v, r, s);
         }
 
@@ -347,11 +402,10 @@ Bob可以随时关闭支付通道，但如果他没有这样做，Alice 需要�
             returns (address)
         {
             (uint8 v, bytes32 r, bytes32 s) = splitSignature(sig);
-
             return ecrecover(message, v, r, s);
         }
 
-        /// builds a prefixed hash to mimic the behavior of eth_sign.
+        /// 构建一个带前缀的哈希，以模仿 eth_sign 的行为。
         function prefixed(bytes32 hash) internal pure returns (bytes32) {
             return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
         }
@@ -359,29 +413,29 @@ Bob可以随时关闭支付通道，但如果他没有这样做，Alice 需要�
 
 
 .. note::
-  函数 ``splitSignature`` 没有做足够的安全检查，完整的产品里应该使用严格测试的库，如： `openzepplin 的实现版本  <https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/ECDSA.sol>`_ 。
-
+  函数 ``splitSignature`` 没有做足够的安全检查。
+  例如 openzeppelin 的 `版本 <https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/ECDSA.sol>`_。
 
 验证支付
 ------------------
 
-与上一节不同，付款通道中的消息不是马上赎回。 收款人会跟踪最新消息及在关闭付款通道时兑换它。 这意味着接收者对每条消息进行验证就至关重要。
-否则，无法保证收款人能够最终获得付款。
+与上一节不同，支付通道中的消息不会立即兑现。接收者跟踪最新消息，并在关闭支付通道时兑现。
+这意味着接收者必须对每条消息进行自己的验证。否则，接收者无法保证最终能够获得支付。
 
-收款人使用以下过程验证每条消息：
+接收者应使用以下过程验证每条消息：
 
-    1. 验证信息中的合约地址是否与付款通道匹配。
-    2. 验证新金额是否为预期金额。
-    3. 确认新金额不超过托管的以太币总额。
-    4. 验证签名是否有效并来自通道的付款方。
+    1. 验证消息中的合约地址是否与支付通道匹配。
+    2. 验证新总金额是否为预期金额。
+    3. 验证新总金额是否不超过托管的以太币金额。
+    4. 验证签名是否有效，并且来自支付通道发送者。
 
-
-我们使用 `ethereumjs-util <https://github.com/ethereumjs/ethereumjs-util>`_
-库来编写验证过程，这里使用 JavaScript ，当然实现的方式有很多。下面的代码借鉴了 上面的 ``constructMessage`` 函数:
+我们将使用 `ethereumjs-util <https://github.com/ethereumjs/ethereumjs-util>`_ 库来编写此验证。
+最后一步可以通过多种方式完成，我们使用 JavaScript。
+以下代码借用了上面签名 **JavaScript 代码** 中的 ``constructPaymentMessage`` 函数：
 
 .. code-block:: javascript
 
-    // this mimics the prefixing behavior of the eth_sign JSON-RPC method.
+    // 这模仿了 eth_sign JSON-RPC 方法的前缀行为。
     function prefixed(hash) {
         return ethereumjs.ABI.soliditySHA3(
             ["string", "bytes32"],
