@@ -1,105 +1,97 @@
-
 .. index:: ! library, callcode, delegatecall
 
 .. _libraries:
 
-************
+*********
 库
-************
+*********
 
-库与合约类似，库的目的是只需要在特定的地址部署一次，而它们的代码可以通过 EVM 的 ``DELEGATECALL`` (Homestead 之前使用 ``CALLCODE`` 关键字)特性进行重用。
-
-这意味着如果库函数被调用，它的代码在调用合约的上下文中执行，即 ``this`` 指向调用合约，特别注意，他访问的是调用合约存储的状态。
-因为每个库都是一段独立的代码，所以它仅能访问调用合约明确提供的状态变量（否则它就无法通过名字访问这些变量）。
-
-因为我们假定库是无状态的，所以如果它们不修改状态（如果它们是 ``view`` 或者 ``pure`` 函数），库函数仅能通过直接调用来使用（即不使用 ``DELEGATECALL`` 关键字），
-特别是，任何库不可能被销毁。
+库类似于合约，但它们的目的是仅在特定地址上部署一次，并通过 EVM 的 ``DELEGATECALL`` （在 Homestead 之前为 ``CALLCODE``）功能重用其代码。
+这意味着如果调用库函数，其代码将在调用合约的上下文中执行，即 ``this`` 指向调用合约，特别是可以访问调用合约的存储。
+由于库是一个独立的源代码片段，它只能访问调用合约的状态变量，前提是这些变量被显式提供（否则它将无法命名它们）。
+库函数只能直接调用（即不使用 ``DELEGATECALL``），如果它们不修改状态（即如果它们是 ``view`` 或 ``pure`` 函数），因为库被假定为无状态。特别一点是，库库不能被销毁。
 
 .. note::
-    在0.4.20版本之前，可以通过绕过Solidity的类型系统来销毁库。
-    从0.4.20版本开始，库包含一个 :ref:`调用保护机制<call-protection>`，该机制不允许修改状态的函数被直接调用（即不使用 ``DELEGATECALL`` ）。
+    在 0.4.20 版本之前，可以通过规避 Solidity 的类型系统来销毁库。从该版本开始，库包含一个 :ref:`机制<call-protection>`，禁止直接调用状态修改函数（即不使用 ``DELEGATECALL``）。
 
-使用库就显示是使用基类合约方法类似。虽然它们在继承关系中不会显式可见，但调用库函数与调用显式的基类合约十分类似（可以使用 ``L.f()`` 调用）。
-
-当然，使用内部调用约定来调用库的内部函数，这意味着所有的 internal 类型，和 :ref:`保存在内存类型 <data-location>`  都是通过引用而不是复制来传递。
-
-EVM 为了实现这些，合约所调用的内部库函数的代码及内部调用的所有函数都在编译阶段被包含到调用合约中，然后使用一个 ``JUMP`` 指令调用来代替 ``DELEGATECALL``。
-
+库可以被视为使用它们的合约的隐式基合约。它们不会在继承层次结构中显式可见，但对库函数的调用看起来就像对显式基合约的函数的调用（使用合格访问，如 ``L.f()``）。
+当然，对内部函数的调用使用内部调用约定，这意味着所有内部类型可以传递，类型 :ref:`存储在内存中 <data-location>` 将按引用传递而不是复制。
+为了在 EVM 中实现这一点，从合约调用的内部库函数的代码以及从其中调用的所有函数将在编译时包含在调用合约中，并将使用常规的 ``JUMP`` 调用而不是 ``DELEGATECALL``。
 
 .. note::
-    当涉及到 public 函数时，继承的类比就失效了。
-    用 ``L.f()`` 调用一个公共库函数的与外部调用（准确的说是 ``DELEGATECALL`` 调用） 差不多。
-    相反，使用 ``A.f()`` 时，当 ``A`` 是合约的基类合约时， ``A.f()`` 是一个内部调用。
-
+    当涉及到公共函数时，继承类比会失效。
+    使用 ``L.f()`` 调用公共库函数会导致外部调用（准确地说是 ``DELEGATECALL``）。
+    相反，当 ``A`` 是当前合约的基合约时，``A.f()`` 是内部调用。
 
 .. index:: using for, set
 
-下面的示例说明如何使用库（但也请务必看看 :ref:`using for <using-for>` 有一个实现 set 更好的例子）。
+以下示例说明了如何使用库（但使用手动方法，确保查看 :ref:`using for <using-for>` 以获取更高级的实现集合的示例）。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.6.0 <0.9.0;
 
-      // 我们定义了一个新的结构体数据类型，用于在调用合约中保存数据。
-      struct Data {
+
+    // 我们定义一个新的结构数据类型，将用于在调用合约中保存其数据。
+    struct Data {
         mapping(uint => bool) flags;
-      }
+    }
 
     library Set {
+        // 注意，第一个参数是“存储引用”类型，因此仅其存储地址而不是其内容作为调用的一部分传递。
+        // 这是库函数的一个特殊特性。如果函数可以被视为该对象的方法，通常将第一个参数称为 `self`。
+        function insert(Data storage self, uint value)
+            public
+            returns (bool)
+        {
+            if (self.flags[value])
+                return false; // 已经存在
+            self.flags[value] = true;
+            return true;
+        }
 
-      // 注意第一个参数是“storage reference”类型，因此在调用中参数传递的只是它的存储地址而不是内容。
-      // 这是库函数的一个特性。如果该函数可以被视为对象的方法，则习惯称第一个参数为 `self` 。
-      function insert(Data storage self, uint value)
-          public
-          returns (bool)
-      {
-          if (self.flags[value])
-              return false; // 已经存在
-          self.flags[value] = true;
-          return true;
-      }
+        function remove(Data storage self, uint value)
+            public
+            returns (bool)
+        {
+            if (!self.flags[value])
+                return false; // 不存在
+            self.flags[value] = false;
+            return true;
+        }
 
-      function remove(Data storage self, uint value)
-          public
-          returns (bool)
-      {
-          if (!self.flags[value])
-              return false; // 不存在
-          self.flags[value] = false;
-          return true;
-      }
-
-      function contains(Data storage self, uint value)
-          public
-          view
-          returns (bool)
-      {
-          return self.flags[value];
-      }
+        function contains(Data storage self, uint value)
+            public
+            view
+            returns (bool)
+        {
+            return self.flags[value];
+        }
     }
+
 
     contract C {
         Data knownValues;
 
         function register(uint value) public {
-            // 不需要库的特定实例就可以调用库函数，
-            // 因为当前合约就是“instance”。
+            // 可以在没有特定库实例的情况下调用库函数，因为“实例”将是当前合约。
             require(Set.insert(knownValues, value));
         }
-        // 如果我们愿意，我们也可以在这个合约中直接访问 knownValues.flags。
+        // 在这个合约中，如果需要，我们也可以直接访问 knownValues.flags。
     }
 
-当然，你不必按照这种方式去使用库：它们也可以在不定义结构数据类型的情况下使用。
-函数也不需要任何存储引用参数，库可以出现在任何位置并且可以有多个存储引用参数。
+当然，不必遵循这种方式来使用库：它们也可以在不定义结构数据类型的情况下使用。
+函数也可以在没有任何存储引用参数的情况下工作，并且可以有多个存储引用参数，并且可以在任何位置。
 
-调用 ``Set.contains``，``Set.insert`` 和 ``Set.remove`` 都被编译为外部调用（ ``DELEGATECALL`` ）。
-如果使用库，请注意实际执行的是外部函数调用。
-``msg.sender``， ``msg.value`` 和 ``this`` 在调用中将保留它们的值，
-（在 Homestead 之前，因为使用了 ``CALLCODE``，改变了 ``msg.sender`` 和 ``msg.value``)。
+对 ``Set.contains``、``Set.insert`` 和 ``Set.remove`` 的调用都被编译为对外部合约/库的调用（``DELEGATECALL``）。
+如果使用库，请注意会执行实际的外部函数调用。
+尽管如此，``msg.sender``、``msg.value`` 和 ``this`` 在此调用中将保留其值（在 Homestead 之前，由于使用 ``CALLCODE``，``msg.sender`` 和 ``msg.value`` 会发生变化）。
 
-以下示例展示了如何在库中使用内存类型和内部函数来实现自定义类型，而无需支付外部函数调用的开销：
+以下示例展示了如何使用 :ref:`存储在内存中的类型 <data-location>` 和库中的内部函数，以实现自定义类型而不增加外部函数调用的开销：
 
 .. code-block:: solidity
+    :force:
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity ^0.8.0;
@@ -109,8 +101,7 @@ EVM 为了实现这些，合约所调用的内部库函数的代码及内部调�
     }
 
     library BigInt {
-
-        function fromUint(uint x) internal pure returns (bigint r) {
+        function fromUint(uint x) internal pure returns (bigint memory r) {
             r.limbs = new uint[](1);
             r.limbs[0] = x;
         }
@@ -131,7 +122,7 @@ EVM 为了实现这些，合约所调用的内部库函数的代码及内部调�
                 }
             }
             if (carry > 0) {
-                // too bad, we have to add a limb
+                // 太糟糕了，我们必须添加一个 limb
                 uint[] memory newLimbs = new uint[](r.limbs.length + 1);
                 uint i;
                 for (i = 0; i < r.limbs.length; ++i)
@@ -161,55 +152,48 @@ EVM 为了实现这些，合约所调用的内部库函数的代码及内部调�
         }
     }
 
+可以通过将库类型转换为 ``address`` 类型来获取库的地址，即使用 ``address(LibraryName)``。
 
-可以通过类型转换, 将库类型更改为 ``address`` 类型, 例如: 使用  ``address(LibraryName)``
+由于编译器不知道库将被部署到的地址，编译后的十六进制代码将包含形式为 ``__$30bbc0abd4d6364515865950d3e0d10953$__`` 的占位符 `(格式在 <v0.5.0) <https://docs.soliditylang.org/en/v0.4.26/contracts.html#libraries>`_。
+占位符是完全限定库名称的 keccak256 哈希的十六进制编码的 34 个字符前缀，例如，如果库存储在名为 ``bigint.sol`` 的文件中的 ``libraries/`` 目录下，则为 ``libraries/bigint.sol:BigInt``。
+这样的字节码是不完整的，不应被部署。占位符需要被实际地址替换。
+可以通过在编译库时将它们传递给编译器，或者使用链接器更新已编译的二进制文件来做到这一点。
+有关如何使用命令行编译器进行链接的信息，请参见 :ref:`library-linking`。
+与合约相比，库在以下方面受到限制：
 
+- 它们不能有状态变量
+- 它们不能继承，也不能被继承
+- 它们不能接收以太币
+- 它们不能被销毁
 
-由于编译器无法知道库的部署位置，编译器会生成 ``__$30bbc0abd4d6364515865950d3e0d10953$__`` 形式的占位符，该占位符是完整的库名称的keccak256哈希的十六进制编码的34个字符的前缀，例如：如果该库存储在libraries目录中名为bigint.sol的文件中，则完整的库名称为``libraries/bigint.sol:BigInt``。
-
-此类字节码不完整的合约，不应该部署。 占位符需要替换为实际地址。 你可以通过在编译库时将它们传递给编译器或使用链接器更新已编译的二进制文件来实现。
-
-有关如何使用命令行编译器进行链接的信息，请参见 :ref:`library-linking`  。
-
-
-与合约相比，库的限制：
-
-- 没有状态变量
-- 不能够继承或被继承
-- 不能接收以太币
-- 不可以被销毁
-
-（将来有可能会解除这些限制）
+（这些限制可能在以后被解除。）
 
 .. _library-selectors:
 .. index:: ! selector; of a library function
 
-库的函数签名与选择器
-==============================================
+库的函数签名和选择器
+==========================
 
-尽管可以对 public 或 external 的库函数进行外部调用，但此类调用会被视为Solidity的内部调用，与常规的 :ref:`contract ABI<ABI>` 规则不同。
+虽然可以对公共或外部库函数进行外部调用，但此类调用的调用约定被认为是 Solidity 内部的，与常规的 :ref:`contract ABI<ABI>` 中规定的不同。
+外部库函数支持比外部合约函数更多的参数类型，例如递归结构和存储指针。
+因此，用于计算 4 字节选择器的函数签名是根据内部命名方案计算的，而在合约 ABI 中不支持的参数类型使用内部编码。
 
-外部库函数比外部合约函数支持更多的参数类型，例如递归结构和指向存储的指针。
+以下标识符用于签名中的类型：
 
-因此，计算用于计算4字节选择器的函数签名遵循内部命名模式以及可对合约ABI中不支持的类型的参数使用内部编码。
+- 值类型、非存储的 ``string`` 和非存储的 ``bytes`` 使用与合约 ABI 中相同的标识符。
+- 非存储数组类型遵循与合约 ABI 中相同的约定，即动态数组为 ``<type>[]``，固定大小数组为 ``<type>[M]``，其中 ``M`` 为元素个数。
+- 非存储结构通过其完全限定名引用，即 ``C.S`` 表示 ``contract C { struct S { ... } }``。
+- 存储指针映射使用 ``mapping(<keyType> => <valueType>) storage``，其中 ``<keyType>`` 和 ``<valueType>`` 分别是映射的键和值类型的标识符。
+- 其他存储指针类型使用其对应非存储类型的类型标识符，但在其后附加一个空格和 ``storage``。
 
+参数编码与常规合约 ABI 相同，存储指针的编码为一个 ``uint256`` 值，指向它们所指向的存储槽。
 
-以下标识符可以作为函数签名中的类型：
-
- - 值类型, 非存储的（non-storage） ``string`` 及非存储的 ``bytes`` 使用和合约 ABI 中同样的标识符。
- - 非存储的数组类型遵循合约 ABI 中同样的规则，例如 ``<type>[]`` 为动态数组以及 ``<type>[M]`` 为 ``M`` 个元素的动态数组。
- - 非存储的结构体使用完整的命名引用，例如 ``C.S`` 用于 ``contract C { struct S { ... } }``.
- - 存储的映射指针使用 ``mapping(<keyType> => <valueType>) storage`` 当 ``<keyType>`` 和 ``<valueType>`` 是映射的键和值类型。
- - 其他的存储的指针类型使用其对应的非存储类型的类型标识符，但在其后面附加一个空格及 ``storage`` 。
-
-
-除了指向存储的指针以外，参数编码与常规合约ABI相同，存储指针被编码为 ``uint256`` 值，指向它们所指向的存储插槽。
-
-
-与合约 ABI 相似，选择器由签名的Keccak256哈希的前四个字节组成。可以使用 .selector 成员从Solidity中获取其值，如下所示：
+与合约 ABI 类似，选择器由签名的 Keccak256 哈希的前四个字节组成。
+其值可以通过 Solidity 使用 ``.selector`` 成员获得，如下所示：
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.5.14 <0.9.0;
 
     library L {
@@ -223,20 +207,19 @@ EVM 为了实现这些，合约所调用的内部库函数的代码及内部调�
     }
 
 
+
 .. _call-protection:
 
 库的调用保护
-=============================
+=================
 
-如果库的代码是通过 ``CALL`` 来执行，而不是 ``DELEGATECALL`` 或者 ``CALLCODE`` 那么执行的结果会被回退，
-除非是对 ``view`` 或者 ``pure`` 函数的调用。
+如前言所述，如果库的代码使用 ``CALL`` 而不是 ``DELEGATECALL`` 或 ``CALLCODE`` 执行，它将会回退，除非调用的是 ``view`` 或 ``pure`` 函数。
 
-EVM 没有为合约提供检测是否使用 ``CALL`` 的直接方式，但是合约可以使用 ``ADDRESS`` 操作码找出正在运行的“位置”。
-生成的代码通过比较这个地址和构造时的地址来确定调用模式。
+EVM 并没有提供合约直接检测是否使用 ``CALL`` 调用的方式，但合约可以使用 ``ADDRESS`` 操作码来找出“它”当前运行的位置。
+生成的代码将此地址与构造时使用的地址进行比较，以确定调用模式。
 
-更具体地说，库的运行时代码总是从一个 push 指令开始，它在编译时是 20 字节的零。当运行部署代码时，这个常数
-被内存中的当前地址替换，修改后的代码存储在合约中。在运行时，部署时地址就成为了第一个被 push 到堆栈上的常数，
-对于任何 non-view 和 non-pure 函数，调度器代码都将对比当前地址与这个常数是否一致。
+更具体地说，库的运行时代码总是以一个推送指令开始，该指令在编译时是一个 20 字节的零。
+当部署代码运行时，这个常量在内存中被当前地址替换，并且这个修改后的代码被存储在合约中。
+在运行时，这导致部署时的地址成为第一个被推送到栈上的常量，调度代码将当前地址与此常量进行比较，以检查任何非视图和非纯函数。
 
-这意味着库在链上存储的实际代码与编译器输出的 ``deployedBytecode`` 的编码是不同。
-
+这意味着存储在链上的库的实际代码与编译器输出的 ``deployedBytecode`` 不同。
