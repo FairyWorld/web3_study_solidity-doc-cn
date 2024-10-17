@@ -1,20 +1,19 @@
 .. index:: contract;modular, modular contract
 
-*********************
-库合约使用
-*********************
+*****************
+模块化合约
+*****************
 
-通过在合约中引入模块化方法，可以帮助我们减少复杂度以及提高可读性，可以帮助我们定位 bug，发现开发和代码评审期间的漏洞。
-
-在下面的例子中，合约使用 ``Balances`` 的 ``move`` 方法 :ref:`library <libraries>` 来检查地址之间发送的余额是否符合你的期望。
-通过这种方式， ``Balances`` 库提供了一个孤立的组件，正确地跟踪账户的余额。
-很容易验证 ``Balances`` 库永远不会产生负的余额或溢出，所有余额的总和在合约的有效期内是一个不变量。
-
+模块化构建合约的方法可以帮助减少复杂性并提高可读性，这将有助于在开发和代码审查过程中识别错误和漏洞。
+如果在隔离状态下指定和控制每个模块的行为，那么需要考虑的交互仅仅是模块规范之间的交互，而不是合约中其他所有活动部分之间的交互。
+在下面的示例中，合约使用 ``Balances`` :ref:`library <libraries>` 的 ``move`` 方法来检查在地址之间发送的余额是否符合预期。
+通过这种方式，``Balances`` 库提供了一个隔离的组件，能够正确跟踪账户的余额。
+很容易验证 ``Balances`` 库从不产生负余额或溢出，并且所有余额的总和在合约的生命周期内是一个不变的量。
 
 .. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
-    pragma solidity >=0.5.0  <0.9.0;
+    pragma solidity >=0.5.0 <0.9.0;
 
     library Balances {
         function move(mapping(address => uint256) storage balances, address from, address to, uint amount) internal {
@@ -27,12 +26,11 @@
 
     contract Token {
         mapping(address => uint256) balances;
-        using Balances for *;   // 引入库
-        mapping(address => mapping (address => uint256)) allowed;
+        using Balances for *;
+        mapping(address => mapping(address => uint256)) allowed;
 
         event Transfer(address from, address to, uint amount);
         event Approval(address owner, address spender, uint amount);
-
 
         function transfer(address to, uint amount) external returns (bool success) {
             balances.move(msg.sender, to, amount);
@@ -44,7 +42,7 @@
         function transferFrom(address from, address to, uint amount) external returns (bool success) {
             require(allowed[from][msg.sender] >= amount);
             allowed[from][msg.sender] -= amount;
-            balances.move(from, to, amount);   // 使用了库方法
+            balances.move(from, to, amount);
             emit Transfer(from, to, amount);
             return true;
         }
