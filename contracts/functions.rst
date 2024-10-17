@@ -1,19 +1,15 @@
-
-.. index:: ! functions
+.. index:: ! functions, ! function;free
 
 .. _functions:
 
-******
+*********
 函数
-******
+*********
 
-可以在合约内部和外部定义函数。
+函数可以在合约内外定义。
 
-.. note::
-  译者注：函数可以在合约外部定义是从 0.7.0 之后才开始支持的。
-
-
-合约之外的函数（也称为“自由函数”）始终具有隐式的 ``internal`` :ref:`可见性<visibility-and-getters>`。 它们的代码包含在所有调用它们合约中，类似于内部库函数。
+合约外的函数，也称为“自由函数”，始终具有隐式的 ``internal`` :ref:`可见性<visibility-and-getters>`。
+它们的代码包含在所有调用它们的合约中，类似于内部库函数。
 
 .. code-block:: solidity
 
@@ -28,8 +24,8 @@
     contract ArrayExample {
         bool found;
         function f(uint[] memory arr) public {
-            // This calls the free function internally.
-            // The compiler will add its code to the contract.
+            // 这在内部调用自由函数。
+            // 编译器会将其代码添加到合约中。
             uint s = sum(arr);
             require(s >= 10);
             found = true;
@@ -37,29 +33,27 @@
     }
 
 .. note::
-    在合约之外定义的函数仍然在合约的上下文内执行。 他们仍然可以调用其他合约，将其发送以太币或销毁调用它们的合约等其他事情。
-    与在合约中定义的函数的主要区别为：自由函数不能直接访问存储变量 ``this`` 、存储和不在他们的作用域范围内函数。
-
+    在合约外定义的函数仍然在合约的上下文中执行。
+    它们仍然可以调用其他合约，向它们发送以太，并销毁调用它们的合约，以及其他事情。
+    与在合约内定义的函数的主要区别是自由函数无法直接访问变量 ``this``、存储变量和不在其作用域范围内的函数。
 
 .. _function-parameters-return-variables:
 
-函数参数及返回值
-========================================
+函数参数和返回变量
+========================
 
-与 Javascript 一样，函数可能需要参数作为输入;
-而与 Javascript 和 C 不同的是，它们可能返回任意数量的参数作为输出。
+函数接受类型化参数作为输入，并且与许多其他语言不同，它们也可以返回任意数量的值作为输出。
 
+函数参数
+-------------------
 
-函数参数（输入参数）
-------------------------------
+函数参数的声明方式与变量相同，未使用参数的名称可以省略。
 
-
-函数参数的声明方式与变量相同。不过未使用的参数可以省略参数名。
-
-例如，如果我们希望合约接受有两个整数形参的函数的外部调用，可以像下面这样写：
+例如，如果你希望合约接受一种带有两个整数的外部调用，你可以使用如下内容：
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
     contract Simple {
@@ -69,20 +63,20 @@
         }
     }
 
-函数参数可以当作为本地变量，也可用在等号左边被赋值。
+函数参数可以像其它局部变量一样使用，并且它们也可以被赋值。
 
 .. index:: return array, return string, array, string, array of strings, dynamic array, variably sized array, return struct, struct
-
 
 返回变量
 ----------------
 
-函数返回变量的声明方式在关键词 ``returns`` 之后，与参数的声明方式相同。
+函数返回变量语法声明与 ``returns`` 关键字后的语法声明相同。
 
-例如，如果我们需要返回两个结果：两个给定整数的和与积，我们应该写作：
+例如，假设你想返回两个结果：两个作为函数参数传递的整数的和与积，那么你可以使用如下内容：
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
     contract Simple {
@@ -96,13 +90,14 @@
         }
     }
 
+返回变量的名称可以省略。
+返回变量可以像其他局部变量一样使用，并且它们以其 :ref:`默认值 <default-value>` 初始化，并在被（重新）赋值之前保持该值。
 
-返回变量名可以被省略。
-返回变量可以当作为函数中的本地变量，没有显式设置的话，会使用 :ref:` 默认值 <default-value>`
-返回变量可以显式给它附一个值(像上面)，也可以使用 ``return`` 语句指定，使用 ``return`` 语句可以一个或多个值，参阅 :ref:`multiple ones<multi-return>` 。
+可以显式地赋值给返回变量，然后像上面那样离开函数，或者可以通过 ``return`` 语句直接提供返回值（可以是单个或 :ref:`多个值<multi-return>`）：
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
     contract Simple {
@@ -115,30 +110,27 @@
         }
     }
 
-这个形式等同于赋值给返回参数，然后用 ``return;`` 退出。
-
-如果使用 ``return`` 提前退出有返回值的函数， 必须在用 return 时提供返回值。
-
+如果使用早期的 ``return`` 离开一个具有返回变量的函数，必须与返回语句一起提供返回值。
 
 .. note::
-    非内部函数有些类型没法返回，这些类型如下，以及把他们的组合：
+    不能从非内部函数返回某些类型。
+    这包括以下列出的类型以及任何递归包含它们的复合类型：
 
     - mappings （映射）,
-    - 内部函数类型,
-    - 指向存储 ``storage`` 的引用类型,
-    - 多维数组 (仅适用于 :ref:`ABI coder v1 <abi_coder>`),
-    - 机构体 (仅适用于 :ref:`ABI coder v1 <abi_coder>`).
-    
-    这些限制不使用与库函数，因为他们是不同的  :ref:`internal ABI <library-selectors>`.
+    - 内部函数类型，
+    - 位置设置为 ``storage`` 的引用类型，
+    - 多维数组（仅适用于 :ref:`ABI 编码器 v1 <abi_coder>`），
+    - 结构体（仅适用于 :ref:`ABI 编码器 v1 <abi_coder>`）。
+
+    由于库函数的不同 :ref:`内部 ABI <library-selectors>`，此限制不适用于库函数。
 
 .. _multi-return:
 
 返回多个值
 -------------------------
 
-当函数需要使用多个值，可以用语句 ``return (v0, v1, ..., vn)`` 。
-参数的数量需要和声明时候一致。
-
+当一个函数有多个返回类型时，可以使用语句 ``return (v0, v1, ..., vn)`` 返回多个值。
+组件的数量必须与返回变量的数量相同，并且它们的类型必须匹配，可能在 :ref:`隐式转换 <types-conversion-elementary-types>` 之后。
 
 .. _state-mutability:
 
@@ -149,32 +141,31 @@
 
 .. _view-functions:
 
-View 视图函数
+视图函数
 --------------
 
-可以将函数声明为 ``view`` 类型，这种情况下要保证不修改状态。
+函数可以声明为 ``view``，在这种情况下它们承诺不修改状态。
 
 .. note::
+  如果编译器的 EVM 目标是 Byzantium 或更新版本（默认），则在调用 ``view`` 函数时使用操作码 ``STATICCALL``，这强制状态在 EVM 执行过程中保持不变。
+  对于库 ``view`` 函数使用 ``DELEGATECALL``，因为没有组合的 ``DELEGATECALL`` 和 ``STATICCALL``。
+  这意味着库 ``view`` 函数没有运行时检查来防止状态修改。这不应对安全性产生负面影响，因为库代码通常在编译时已知，静态检查器执行编译时检查。
 
-  如果编译器的 EVM 目标是拜占庭硬分叉（ 译者注：Byzantium 分叉发生在2017年10月，这次分叉进加入了4个操作符： REVERT 、RETURNDATASIZE、RETURNDATACOPY 、STATICCALL） 或更新的 (默认), 则操作码 ``STATICCALL`` 将用于视图函数, 这些函数强制在 EVM 执行过程中保持不修改状态。
-  对于库视图函数, 使用 ``DELLEGATECALL``, 因为没有组合的 ``DELEGATECALL`` 和 ``STATICALL``。这意味着库视图函数不会在运行时检查进而阻止状态修改。
-  这不会对安全性产生负面影响, 因为库代码通常在编译时知道, 并且静态检查器会执行编译时检查。
+以下语句被视为修改状态：
 
-
-下面的语句被认为是修改状态：
-
-#. 修改状态变量。
-#. :ref:`产生事件 <events>`。
-#. :ref:`创建其它合约 <creating-contracts>`。
+#. 写入状态变量（存储和临时存储）。
+#. :ref:`发出事件 <events>`。
+#. :ref:`创建其他合约 <creating-contracts>`。
 #. 使用 ``selfdestruct``。
-#. 通过调用发送以太币。
-#. 调用任何没有标记为 ``view`` 或者 ``pure`` 的函数。
+#. 通过调用发送以太。
+#. 调用任何未标记为 ``view`` 或 ``pure`` 的函数。
 #. 使用低级调用。
-#. 使用包含特定操作码的内联汇编。
+#. 使用包含某些操作码的内联汇编。
 
 .. code-block:: solidity
 
-    pragma solidity  >=0.5.0 <0.9.0;
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity >=0.5.0 <0.9.0;
 
     contract C {
         function f(uint a, uint b) public view returns (uint) {
@@ -183,45 +174,40 @@ View 视图函数
     }
 
 .. note::
-  ``constant`` 之前是 ``view`` 的别名，不过在0.5.0之后移除了。
+  ``constant`` 在函数上曾经是 ``view`` 的别名，但在 0.5.0 版本中被删除。
 
 .. note::
-  Getter 方法自动被标记为 ``view``。
+  Getter 方法自动标记为 ``view``。
 
 .. note::
-
-  在0.5.0 版本之前, 编译器没有对 ``view`` 函数使用 ``STATICCALL`` 操作码。
-  这样通过使用无效的显式类型转换会启用视图函数中的状态修改。
-  通过对 ``view`` 函数使用 ``STATICCALL`` , 可以防止在 EVM 级别上对状态进行修改。
-
+  在 0.5.0 版本之前，编译器未对 ``view`` 函数使用 ``STATICCALL`` 操作码。
+  这使得通过使用无效的显式类型转换在 ``view`` 函数中进行状态修改成为可能。
+  通过对 ``view`` 函数使用 ``STATICCALL``，在 EVM 层面上防止了对状态的修改。
 
 .. index:: ! pure function, function;pure
 
 .. _pure-functions:
 
-Pure 纯函数
+纯函数
 --------------
 
-函数可以声明为 ``pure`` ，在这种情况下，承诺不读取也不修改状态变量。
-
-特别是，应该可以在编译时确定一个 ``pure`` 函数，它仅处理输入参数和 ``msg.data`` ，对当前区块链状态没有任何了解。
-这也意味着读取 ``immutable`` 变量也不是一个 ``pure`` 操作。
-
+函数可以声明为 ``pure``，在这种情况下，函数承诺不读取或修改状态。
+特别是，给定仅其输入和 ``msg.data``，但不需要了解当前区块链状态，应该能够在编译时评估 ``pure`` 函数。
+这意味着读取 ``immutable`` 变量可能是非纯操作。
 
 .. note::
-    如果编译器的 EVM 编译目标设置为 Byzantium 或之后的版本 (默认), 则使用操作码 ``STATICCALL`` , 这并不保证状态未被读取, 但至少不被修改。
+  如果编译器的 EVM 编译目标设置为 Byzantium 或更新版本（默认），则使用操作码 ``STATICCALL``，这并不保证状态不被读取，但至少保证状态不被修改。
+除了上述解释的状态修改语句列表，以下被视为读取状态：
 
-
-除了上面解释的状态修改语句列表之外，以下被认为是读取状态：
-
-#. 读取状态变量。
-#. 访问 ``address(this).balance`` 或者 ``<address>.balance``。
-#. 访问 ``block``，``tx``， ``msg`` 中任意成员 （除 ``msg.sig`` 和 ``msg.data`` 之外）。
+#. 从状态变量（存储和临时存储）读取。
+#. 访问 ``address(this).balance`` 或 ``<address>.balance``。
+#. 访问 ``block``、``tx``、``msg`` 的任何成员（``msg.sig`` 和 ``msg.data`` 除外）。
 #. 调用任何未标记为 ``pure`` 的函数。
 #. 使用包含某些操作码的内联汇编。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.5.0 <0.9.0;
 
     contract C {
@@ -230,77 +216,71 @@ Pure 纯函数
         }
     }
 
-纯函数能够使用 ``revert()`` 和 ``require()`` 在 :ref:`发生错误 <assert-and-require>` 时去还原潜在状态更改。
+纯函数能够使用 ``revert()`` 和 ``require()`` 函数在发生 :ref:`错误 <assert-and-require>` 时恢复潜在的状态更改。
 
-还原状态更改不被视为 "状态修改", 因为它只还原以前在没有``view`` 或 ``pure`` 限制的代码中所做的状态更改, 并且代码可以选择捕获 ``revert`` 并不传递还原。
+恢复状态变化不被视为“状态修改”，因为只有在代码中先前进行的、未带有 ``view`` 或 ``pure`` 限制的状态更改被恢复，而且该代码可以选择捕捉 ``revert`` 并不传递它。
 
 这种行为也符合 ``STATICCALL`` 操作码。
 
-
 .. warning::
-  不可能在 EVM 级别阻止函数读取状态, 只能阻止它们写入状态 (即只能在 EVM 级别强制执行 ``view`` , 而 ``pure`` 不能强制)。
+  在 EVM 层面上，无法阻止函数读取状态，只能阻止它们写入状态（即只能在 EVM 层面上强制执行 ``view``，而无法强制执行 ``pure``）。
 
 .. note::
-  在0.5.0 版本之前, 编译器没有对 ``pure`` 函数使用 ``STATICCALL`` 操作码。这样通过使用无效的显式类型转换启用 ``pure`` 函数中的状态修改。
-  通过对 ``pure`` 函数使用 ``STATICCALL`` , 可以防止在 EVM 级别上对状态进行修改。
-
+  在 0.5.0 版本之前，编译器未对 ``pure`` 函数使用 ``STATICCALL`` 操作码。
+  这使得通过使用无效的显式类型转换在 ``pure`` 函数中启用了状态修改。
+  通过对 ``pure`` 函数使用 ``STATICCALL``，在 EVM 层面上防止了对状态的修改。
 
 .. note::
-
-  在0.4.17版本之前，编译器不会强制 ``pure`` 函数不读取状态。它是一个编译时类型检查, 可以避免在合约类型之间进行无效的显式转换, 因为编译器可以验证合约类型没有状态更改操作, 但它不会在运行时能检查调用实际的类型。
+  在 0.4.17 版本之前，编译器未强制 ``pure`` 不读取状态。
+  这是一种编译时类型检查，可以通过进行无效的显式转换来规避合约类型之间的转换，因为编译器可以验证合约的类型不执行状态更改操作，但无法检查在运行时将被调用的合约实际上是否属于该类型。
 
 .. _special-functions:
 
-特别的函数
+特殊函数
 =================
 
-.. index:: ! receive ether function, function;receive ! receive
+.. index:: ! 接收以太币函数, function;receive, ! receive
 
 .. _receive-ether-function:
 
-receive 接收以太函数
+接收以太币函数
 ----------------------
 
-一个合约最多有一个 ``receive`` 函数, 声明函数为：
-``receive() external payable { ... }``
+一个合约最多可以有一个 ``receive`` 函数，声明为 ``receive() external payable { ... }``（不带 ``function`` 关键字）。
+该函数不能有参数，不能返回任何内容，必须具有``external`` 可见性和 ``payable`` 状态可变性。
+它可以是虚拟的，可以重写，并且可以有 |modifier|。
 
-不需要 ``function`` 关键字，也没有参数和返回值并且必须是　``external``　可见性和　``payable`` 修饰．
-它可以是 ``virtual`` 的，可以被重载也可以有 |modifier| 。
+接收函数在调用合约时执行，且没有提供任何 calldata。这是执行普通以太转账时调用的函数（例如通过 ``.send()`` 或 ``.transfer()``）。
+如果不存在这样的函数，但存在可支付的 :ref:`回退函数 <fallback-function>`，则在普通以太转账时将调用回退函数。
+如果既没有接收以太函数也没有可支付的回退函数，合约将无法通过调用不可支付函数来接收以太，将抛出异常。
 
-在对合约没有任何附加数据调用（通常是对合约转账）是会执行 ``receive`` 函数．　例如　通过 ``.send()`` or ``.transfer()``
-如果 ``receive`` 函数不存在，　但是有payable　的 :ref:`fallback 回退函数 <fallback-function>`　
-那么在进行纯以太转账时，fallback 函数会调用．　
-　
-如果两个函数都没有，这个合约就没法通过常规的转账交易接收以太（会抛出异常）．
-
-
-更糟的是，``receive`` 函数可能只有 2300 gas 可以使用（如，当使用 ``send`` 或 ``transfer`` 时）， 除了基础的日志输出之外，进行其他操作的余地很小。下面的操作消耗会操作 2300  gas :
+在最坏的情况下，``receive`` 函数只有 2300 gas 可用（例如当使用 ``send`` 或 ``transfer`` 时），几乎没有空间执行其他操作，除了基本的日志记录。
+以下操作将消耗超过 2300 gas 补贴：
 
 - 写入存储
 - 创建合约
 - 调用消耗大量 gas 的外部函数
 - 发送以太币
 
+.. warning::
+    当以太币直接发送到合约（没有函数调用，即发送者使用 ``send`` 或 ``transfer``），但接收合约未定义接收以太币函数或可支付回退函数时，将抛出异常，退回以太币（在 Solidity v0.4.0 之前是不同的）。
+    如果你希望你的合约接收以太币，你必须实现接收以太币函数（使用可支付回退函数接收以太并不推荐，因为回退会被调用，并且不会因发送者的接口混淆而失败）。
 
 .. warning::
-    一个没有定义 fallback 函数或　 receive 函数的合约，直接接收以太币（没有函数调用，即使用 ``send`` 或 ``transfer``）会抛出一个异常，
-    并返还以太币（在 Solidity v0.4.0 之前行为会有所不同）。
-    所以如果你想让你的合约接收以太币，必须实现receive函数（使用 payable　fallback 函数不再推荐，因为payable　fallback功能被调用，不会因为发送方的接口混乱而失败）。
+    没有接收以太币函数的合约可以作为 **coinbase 交易** （即 **矿工区块奖励**）的接收者或作为 ``selfdestruct`` 的目标接收以太币。
 
-.. warning::
-    一个没有receive函数的合约，可以作为 *coinbase 交易* （又名 *矿工区块回报* ）的接收者或者作为 ``selfdestruct`` 的目标来接收以太币。
+    合约无法对这种以太转账做出反应，因此也无法拒绝它们。这是 EVM 的设计选择，Solidity 无法规避。
 
-    一个合约不能对这种以太币转移做出反应，因此也不能拒绝它们。这是 EVM 在设计时就决定好的，而且 Solidity 无法绕过这个问题。
+    这也意味着 ``address(this).balance`` 可能高于合约中实现的一些手动会计的总和（即在接收以太币函数中更新计数器）。
 
-    这也意味着 ``address(this).balance`` 可以高于合约中实现的一些手工记帐的总和（例如在receive　函数中更新的累加器记帐）。
-
-下面是一个例子：
+下面是一个使用 ``receive`` 函数的 Sink 合约示例。
 
 .. code-block:: solidity
 
-    pragma solidity ^0.6.0;
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity >=0.6.0 <0.9.0;
 
-    // 这个合约会保留所有发送给它的以太币，没有办法取回。　
+    // 该合约保留所有发送给它的以太币，无法取回。
     contract Sink {
         event Received(address, uint);
         receive() external payable {
@@ -308,43 +288,35 @@ receive 接收以太函数
         }
     }
 
-
-.. index:: ! fallback function, function;fallback
+.. index:: ! 回退函数, function;fallback
 
 .. _fallback-function:
 
-Fallback 回退函数
+回退函数
 -----------------
 
-合约可以最多有一个回退函数。函数声明为： ``fallback () external [payable]`` 或 ``fallback (bytes calldata input) external [payable] returns (bytes memory output)`` 
+一个合约最多可以有一个 ``fallback`` 函数，声明为 ``fallback () external [payable]`` 或 ``fallback (bytes calldata input) external [payable] returns (bytes memory output)`` （两者均不带 ``function`` 关键字）。
 
-没有　``function``　关键字。　必须是　``external``　可见性，它可以是 ``virtual`` 的，可以被重载也可以有 |modifier| 。
+该函数必须具有 ``external`` 可见性。回退函数可以是虚拟的，可以重写，并且可以有修改器。
 
+如果没有其他函数与给定的函数签名匹配，或者根本没有提供数据且没有 :ref:`接收以太函数 <receive-ether-function>`，、则在调用合约时执行回退函数。
+回退函数始终接收数据，但为了接收以太币，它必须标记为 ``payable``。
 
-如果在一个对合约调用中，没有其他函数与给定的函数标识符匹配fallback会被调用．
-或者在没有 :ref:`receive 函数 <receive-ether-function>`　时，而没有提供附加数据对合约调用，那么fallback 函数会被执行。
+如果使用带参数的版本，``input`` 将包含发送到合约的完整数据（等于 ``msg.data``），并可以在 ``output`` 中返回数据。
+返回的数据将不会被 ABI 编码。相反，它将未经修改（甚至不填充）返回。
 
-fallback　函数始终会接收数据，但为了同时接收以太时，必须标记为　``payable`` 。
+在最坏的情况下，如果可支付的回退函数也用作接收函数，则它只能依赖于 2300 gas 可用（请参阅 :ref:`接收以太函数 <receive-ether-function>` 以简要描述其影响）。
 
-如果使用了带参数的版本， ``input`` 将包含发送到合约的完整数据（等于 ``msg.data`` ），并且通过 ``output`` 返回数据。
-返回数据不是 ABI 编码过的数据，相反，它返回不经过修改的数据。
-
-
-更糟的是，如果回退函数在接收以太时调用，可能只有 2300 gas 可以使用，参考　:ref:`receive接收函数 <receive-ether-function>`
-
-与任何其他函数一样，只要有足够的 gas 传递给它，回退函数就可以执行复杂的操作。
+像任何函数一样，只要传递给它的 gas 足够，回退函数可以执行复杂的操作。
 
 .. warning::
-    ``payable`` 的fallback函数也可以在纯以太转账的时候执行， 如果没有　:ref:`receive 以太函数 <receive-ether-function>`
-    推荐总是定义一个receive函数，而不是定义一个``payable`` 的fallback函数，
+    如果没有 :ref:`接收以太币函数 <receive-ether-function>`，则对于普通以太币转账，也会执行 ``payable`` 回退函数。
+    建议如果你定义可支付回退函数，也始终定义接收以太币函数，以区分以太币转账和接口混淆。
 
 .. note::
-    如果想要解码输入数据，那么前四个字节用作函数选择器，然后用 ``abi.decode`` 与数组切片语法一起使用来解码ABI编码的数据：
-     ``(c, d) = abi.decode(_input[4:], (uint256, uint256));``
-
-     请注意，这仅应作为最后的手段，而应使用对应的函数。
-
-
+    如果想解码输入数据，可以检查前四个字节以获取函数选择器，然后可以使用 ``abi.decode`` 结合数组切片语法来解码 ABI 编码的数据：
+    ``(c, d) = abi.decode(input[4:], (uint256, uint256));``
+    请注意，这应仅作为最后的手段使用，应该使用适当的函数。
 
 .. code-block:: solidity
 
@@ -352,24 +324,21 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
     pragma solidity >=0.6.2 <0.9.0;
 
     contract Test {
-        // 发送到这个合约的所有消息都会调用此函数（因为该合约没有其它函数）。
-        // 向这个合约发送以太币会导致异常，因为 fallback 函数没有 `payable` 修饰符
-        fallback() external { x = 1; }
         uint x;
+        // 此函数会被调用以处理发送到此合约的所有消息（没有其他函数）。
+        // 向此合约发送以太币将导致异常，因为回退函数没有 `payable`修改器。
+        fallback() external { x = 1; }
     }
 
-
-    // 这个合约会保留所有发送给它的以太币，没有办法返还。
     contract TestPayable {
         uint x;
         uint y;
-
-        // 除了纯转账外，所有的调用都会调用这个函数．
-        // (因为除了 receive 函数外，没有其他的函数).
-        // 任何对合约非空calldata 调用会执行回退函数(即使是调用函数附加以太).
+        // 此函数会被调用以处理发送到此合约的所有消息，除了普通的以太币转账（除了接收函数外没有其他函数）。
+        // 任何带有非空 calldata 的调用都会执行回退函数（即使在调用时发送了以太币）。
         fallback() external payable { x = 1; y = msg.value; }
 
-        // 纯转账调用这个函数，例如对每个空empty calldata的调用
+        // 此函数会被调用以处理普通的以太币转账，即
+        // 对于每个带有空 calldata 的调用。
         receive() external payable { x = 2; y = msg.value; }
     }
 
@@ -377,37 +346,33 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
         function callTest(Test test) public returns (bool) {
             (bool success,) = address(test).call(abi.encodeWithSignature("nonExistingFunction()"));
             require(success);
-            //  test.x 结果变成 == 1。
+            //  结果是 test.x 变成 == 1。
 
-            // address(test) 不允许直接调用 ``send`` ,  因为 ``test`` 没有 payable 回退函数
-            //  转化为 ``address payable`` 类型 , 然后才可以调用 ``send``
+            // address(test) 不允许直接调用 ``send``，因为 ``test`` 没有 payable 回退函数。
+            // 必须将其转换为 ``address payable`` 类型才能允许调用 ``send``。
             address payable testPayable = payable(address(test));
 
-
-            // 以下将不会编译，但如果有人向该合约发送以太币，交易将失败并拒绝以太币。
-            // test.send(2 ether）;
+            // 如果有人向该合约发送以太币，转账将失败，即这里返回 false。
+            return testPayable.send(2 ether);
         }
 
         function callTestPayable(TestPayable test) public returns (bool) {
             (bool success,) = address(test).call(abi.encodeWithSignature("nonExistingFunction()"));
             require(success);
-            // 结果 test.x 为 1  test.y 为 0.
+            // 结果是 test.x 变为 == 1，test.y 变为 0。
             (success,) = address(test).call{value: 1}(abi.encodeWithSignature("nonExistingFunction()"));
             require(success);
-            // 结果test.x 为1 而 test.y 为 1.
+            // 结果是 test.x 变为 == 1，test.y 变为 1。
 
-            // 发送以太币, TestPayable 的 receive　函数被调用．
-            
-            // 因为函数有存储写入, 会比简单的使用 ``send`` or ``transfer``消耗更多的 gas。
-            // 因此使用底层的call调用
+            // 如果有人向该合约发送以太币，TestPayable 中的接收函数将被调用。
+            // 由于该函数写入存储，它消耗的 gas 比简单的 ``send`` 或 ``transfer`` 更多。
+            // 因此，我们必须使用低级调用。
             (success,) = address(test).call{value: 2 ether}("");
             require(success);
-
-            // 结果 test.x 为 2 而 test.y 为 2 ether.
+            // 结果是 test.x 变为 == 2，test.y 变为 2 ether。
 
             return true;
         }
-
     }
 
 .. index:: ! overload
@@ -417,10 +382,13 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
 函数重载
 ====================
 
-合约可以具有多个不同参数的同名函数，称为“重载”（overloading），这也适用于继承函数。以下示例展示了合约 ``A`` 中的重载函数 ``f``。
+一个合约可以有多个同名但参数类型不同的函数。
+这个过程称为“重载”，也适用于继承的函数。
+以下示例展示了合约 ``A`` 范围内函数 ``f`` 的重载。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
     contract A {
@@ -434,13 +402,15 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
         }
     }
 
-重载函数也存在于外部接口中。如果两个外部可见函数仅区别于 Solidity 内的类型而不是它们的外部类型则会导致错误。
+重载函数也存在于外部接口中。如果两个
+外部可见的函数在 Solidity 类型上不同但在外部类型上相同，则会出错。
 
 .. code-block:: solidity
 
-    // 以下代码无法编译
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
+    // 这将无法编译
     contract A {
         function f(B value) public pure returns (B out) {
             out = value;
@@ -455,19 +425,22 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
     }
 
 
-以上两个 ``f`` 函数重载都接受了 ABI 的地址类型，虽然它们在 Solidity 中被认为是不同的。
+上述两个 ``f`` 函数重载最终都接受地址类型用于 ABI，尽管
+它们在 Solidity 内部被视为不同。
 
 重载解析和参数匹配
 -----------------------------------------
 
-通过将当前范围内的函数声明与函数调用中提供的参数相匹配，可以选择重载函数。
-如果所有参数都可以隐式地转换为预期类型，则选择函数作为重载候选项。如果一个候选都没有，解析失败。
+通过将当前范围内的函数声明与函数调用中提供的参数进行匹配来选择重载函数。
+如果所有参数都可以隐式转换为预期类型，则函数被选为重载候选。
+如果没有恰好一个候选，解析将失败。
 
 .. note::
-    返回参数不作为重载解析的依据。
+    返回参数不计入重载解析。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.16 <0.9.0;
 
     contract A {
@@ -480,5 +453,6 @@ fallback　函数始终会接收数据，但为了同时接收以太时，必须
         }
     }
 
-调用  ``f(50)`` 会导致类型错误，因为 ``50`` 既可以被隐式转换为 ``uint8`` 也可以被隐式转换为 ``uint256``。
-另一方面，调用 ``f(256)`` 则会解析为 ``f(uint256)`` 重载，因为 ``256`` 不能隐式转换为 ``uint8``。
+调用 ``f(50)`` 将产生类型错误，因为 ``50`` 可以隐式转换为 ``uint8``
+和 ``uint256`` 类型。另一方面，``f(256)`` 将解析为 ``f(uint256)`` 重载，因为 ``256`` 不能隐式
+转换为 ``uint8``。
