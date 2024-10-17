@@ -1,4 +1,3 @@
-
 .. index:: ! contract;interface, ! interface contract
 
 .. _interfaces:
@@ -7,22 +6,24 @@
 接口
 **********
 
-接口类似于抽象合约，但是它们不能实现任何函数。还有进一步的限制：
+接口类似于抽象合约，但它们不能实现任何函数。
+还有进一步的限制：
 
-- 无法继承其他合约,不过可以继承其他接口。
-- 接口中所有的函数都需要是 external，尽管在合约里可以是public
-- 无法定义构造函数。
-- 无法定义状态变量。
-- 不可以声明修改器。
+- 它们不能从其他合约继承，但可以从其他接口继承。
+- 所有声明的函数在接口中必须是外部的，即使它们在合约中是公共的。
+- 它们不能声明构造函数。
+- 它们不能声明状态变量。
+- 它们不能声明修改器。
 
-将来可能会解除这里的某些限制。
+这些限制中的一些可能在未来会被解除。
 
-接口基本上仅限于合约 ABI 可以表示的内容，并且 ABI 和接口之间的转换不应该丢失任何信息。
+接口基本上仅限于合约 ABI 可以表示的内容，ABI 与接口之间的转换应该可以在没有任何信息丢失的情况下进行。
 
 接口由它们自己的关键字表示：
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.6.2 <0.9.0;
 
     interface Token {
@@ -31,13 +32,16 @@
         function transfer(address recipient, uint amount) external;
     }
 
-就像继承其他合约一样，合约可以继承接口。接口中的函数都会隐式的标记为 ``virtual`` ，意味着他们会被重写并不需要 ``override`` 关键字。
-但是不表示重写（overriding）函数可以再次重写，仅仅当重写的函数标记为 ``virtual`` 才可以再次重写。
+合约可以像继承其他合约一样继承接口。
 
-接口可以继承其他的接口，遵循同样继承规则。
+在接口中声明的所有函数隐式为 ``virtual``，任何重写它们的函数不需要 ``override`` 关键字。
+这并不自动意味着重写的函数可以再次被重写 —— 只有当重写的函数被标记为 ``virtual`` 时才可以再次重写。
+
+接口可以从其他接口继承。这与正常继承的规则相同。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.6.2 <0.9.0;
 
     interface ParentA {
@@ -49,13 +53,12 @@
     }
 
     interface SubInterface is ParentA, ParentB {
-        // 必须重新定义 test 函数，以表示兼容父合约含义
+        // 必须重新定义 test 以确保父级含义是兼容的。
         function test() external override(ParentA, ParentB) returns (uint256);
     }
 
+在接口和其他类似合约的结构中定义的类型可以从其他合约访问： ``Token.TokenType`` 或 ``Token.Coin``。
 
-定义在接口或其他类合约（ contract-like）结构体里的类型，可以在其他的合约里用这样的方式访问： ``Token.TokenType`` 或 ``Token.Coin``.
+.. warning::
 
-.. warning:
-
-    从 :doc:`Solidity 0.5.0 版本 <050-breaking-changes>` 开始接口里可以支持声明 ``enum`` 类型了。
+    接口自 :doc:`Solidity 版本 0.5.0 <050-breaking-changes>` 起支持 ``enum`` 类型，确保 pragma 版本指定此版本作为最低版本。
