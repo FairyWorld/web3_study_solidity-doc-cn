@@ -3,70 +3,63 @@
 .. index:: purchase, remote purchase, escrow
 
 ********************
-安全的远程购买合约
+安全地远程购买
 ********************
 
-目前，远程购买商品需要多方相互信任。
-最简单的情况涉及一个卖家和一个买家。买方希望从卖方那里收到一件物品，卖方希望得到金钱（或等价物）作为回报。有问题的部分是快递。没有办法确定物品是否到达买方手中。
+远程购买商品目前需要多个相互信任的参与方。
+最简单的配置涉及卖方和买方。买方希望从卖方那里收到一个物品，而卖方希望获得一些补偿，例如以太币。
+这里的问题在于运输：没有办法确定物品是否确实到达了买方手中。
 
-有多种方法来解决这个问题，但都有这样或那样的不足之处。
-在下面的例子中，双方都要把物品价值的两倍作为担保费放入合约。只要发生状况，钱就会一直锁在合约里面，直到买方确认收到物品。
-而这之后，买方可以退回物品价值（他担保费的一半），卖方得到三倍的价值（他们的押金加上价值）。这背后的想法是，双方都有动力去解决这个问题，否则他们的钱就永远被锁定了。
+有多种方法可以解决这个问题，但都或多或少存在不足之处。
+在以下示例中，双方必须将物品价值的两倍放入合约作为托管。
+一旦发生状况，以太币将被锁定在合约中，直到买方确认他们收到了物品。
+之后，买方将获得价值（他们存款的一半），而卖方将获得三倍的价值（他们的存款加上价值）。
+其背后的想法是双方都有动力来解决这种情况，否则他们的以太币将永远被锁定。
 
-这个合约当然不能解决问题，但它概述了你如何在合约中使用类似状态机的结构。
-
+这个合约当然不能解决问题，但概述了如何在合约中使用类似状态机的结构。
 
 .. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity ^0.8.4;
-
     contract Purchase {
         uint public value;
         address payable public seller;
         address payable public buyer;
 
         enum State { Created, Locked, Release, Inactive }
-
+        // 状态变量的默认值为第一个成员，`State.created`
         State public state;
-
 
         modifier condition(bool condition_) {
             require(condition_);
             _;
         }
 
-        /// Only the buyer can call this function.
+        /// 只有买方可以调用此函数。
         error OnlyBuyer();
-        /// Only the seller can call this function.
+        /// 只有卖方可以调用此函数。
         error OnlySeller();
-        /// The function cannot be called at the current state.
+        /// 当前状态下无法调用该函数。
         error InvalidState();
-        /// The provided value has to be even.
+        /// 提供的值必须是偶数。
         error ValueNotEven();
 
-
         modifier onlyBuyer() {
-            require(
-                msg.sender == buyer,
-                "Only buyer can call this."
-            );
+            if (msg.sender != buyer)
+                revert OnlyBuyer();
             _;
         }
 
         modifier onlySeller() {
-            require(
-                msg.sender == seller,
-                "Only seller can call this."
-            );
+            if (msg.sender != seller)
+                revert OnlySeller();
             _;
         }
 
-        modifier inState(State _state) {
-            require(
-                state == _state,
-                "Invalid state."
-            );
+        modifier inState(State state_) {
+            if (state != state_)
+                revert InvalidState();
             _;
         }
 
@@ -75,9 +68,9 @@
         event ItemReceived();
         event SellerRefunded();
 
-        //确保 `msg.value` 是一个偶数。
-        //如果它是一个奇数，则它将被截断。
-        //通过乘法检查它不是奇数。
+        // 确保 `msg.value` 是一个偶数。
+        // 如果是奇数，除法将截断。
+        // 通过乘法检查它不是奇数。
         constructor() payable {
             seller = payable(msg.sender);
             value = msg.value / 2;
@@ -85,9 +78,8 @@
                 revert ValueNotEven();
         }
 
-
-        ///中止购买并回收以太币。
-        ///只能在合约被锁定之前由卖家调用。
+        /// 中止购买并收回以太币。
+        /// 只能由卖方在合约被锁定之前调用。
         function abort()
             external
             onlySeller
@@ -95,12 +87,14 @@
         {
             emit Aborted();
             state = State.Inactive;
+            // 我们在这里直接使用转账。
+            // 可用于防止重入，因为它是此函数中的最后一个调用，我们已经改变了状态。
             seller.transfer(address(this).balance);
         }
 
-        /// 买家确认购买。
-        /// 交易必须包含 `2 * value` 个以太币。
-        /// 以太币会被锁定，直到 confirmReceived 被调用。
+        /// 作为买方确认购买。
+        /// 交易必须包括 `2 * value` 以太币。
+        /// 以太币将在调用 confirmReceived 之前被锁定。
         function confirmPurchase()
             external
             inState(State.Created)
@@ -112,33 +106,30 @@
             state = State.Locked;
         }
 
-        /// 确认你（买家）已经收到商品。
-        /// 这会释放被锁定的以太币。
+        /// 确认你（买方）收到了物品。
+        /// 这将释放锁定的以太币。
         function confirmReceived()
             external
             onlyBuyer
             inState(State.Locked)
         {
             emit ItemReceived();
-            // It is important to change the state first because
-            // otherwise, the contracts called using `send` below
-            // can call in again here.
+            // 首先改变状态是很重要的，
+            // 否则，使用 `send` 调用的合约可以再次调用这里。
             state = State.Release;
 
             buyer.transfer(value);
         }
 
-        /// This function refunds the seller, i.e.
-        /// pays back the locked funds of the seller.
+        /// 此函数退款给卖方，即退还卖方的锁定资金。
         function refundSeller()
             external
             onlySeller
             inState(State.Release)
         {
             emit SellerRefunded();
-            // It is important to change the state first because
-            // otherwise, the contracts called using `send` below
-            // can call in again here.
+            // 首先改变状态是很重要的，
+            // 否则，使用 `send` 调用的合约可以再次调用这里。
             state = State.Inactive;
 
             seller.transfer(3 * value);
