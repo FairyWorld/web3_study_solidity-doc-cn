@@ -1,40 +1,31 @@
 .. include:: glossaries.rst
-.. index:: !mapping
 
+.. index:: !mapping
 .. _mapping-types:
 
-映射
-=====
+映射类型
+=============
 
-映射类型在声明时的形式为 ``mapping(KeyType => ValueType)``。
-其中 ``KeyType`` 可以是任何基本类型，即可以是任何的内建类型， ``bytes`` 和 ``string`` 或合约类型、枚举类型。
-而其他用户定义的类型或复杂的类型如：映射、结构体、即除 ``bytes`` 和 ``string`` 之外的数组类型是不可以作为 ``KeyType`` 的类型的。
+映射类型使用语法 ``mapping(KeyType KeyName? => ValueType ValueName?)``，映射类型的变量使用语法 ``mapping(KeyType KeyName? => ValueType ValueName?) VariableName`` 声明。 
+``KeyType`` 可以是任何内置值类型、``bytes``、``string``，或任何合约或枚举类型。
+其他用户定义或复杂类型，如映射、结构体或数组类型是不允许的。 
+``ValueType`` 可以是任何类型，包括映射、数组和结构体。 ``KeyName`` 和 ``ValueName`` 是可选的（因此 ``mapping(KeyType => ValueType)`` 也可以使用），可以是任何有效的标识符，但不能是类型。
 
-``ValueType`` 可以是包括映射类型在内的任何类型。
+可以将映射视为 `哈希表 <https://en.wikipedia.org/wiki/Hash_table>`_，它们在逻辑上被初始化为每个可能的键都存在，并映射到一个字节表示全为零的值，即类型的 :ref:`默认值 <default-value>`。
+相似之处到此为止，键数据并不存储在映射中，，仅其 `keccak256` 哈希被用来查找值。
 
-映射可以视作 `哈希表 <https://en.wikipedia.org/wiki/Hash_table>`_ ，它们在实际的初始化过程中创建每个可能的 key，
-并将其映射到字节形式全是零的值：一个类型的 :ref:`默认值 <default-value>`。然而下面是映射与哈希表不同的地方：
-在映射中，实际上并不存储 key，而是存储它的 ``keccak256`` 哈希值，从而便于查询实际的值。
+因此，映射没有长度或键或值被设置的概念，因此不能在没有关于分配键的额外信息的情况下被擦除（见 :ref:`clearing-mappings`）。
 
-正因为如此，映射是没有长度的，也没有 key 的集合或 value 的集合的概念。
-，因此如果没有其他信息键的信息是无法被删除（请参阅 :ref:`clearing-mappings` ）。
+映射只能具有 ``storage`` 的数据位置，因此允许作为状态变量、作为函数中的存储引用类型，或作为库函数的参数。
+它们不能作为公开可见的合约函数的参数或返回参数。这些限制同样适用于包含映射的数组和结构体。
 
+可以将映射类型的状态变量标记为 ``public``，Solidity 会为你创建一个 :ref:`getter <visibility-and-getters>`。 
+``KeyType`` 成为 getter 的参数，名称为 ``KeyName``（如果指定）。
+如果 ``ValueType`` 是值类型或结构体，getter 返回 ``ValueType``，名称为 ``ValueName``（如果指定）。
+如果 ``ValueType`` 是数组或映射，getter 将需要递归地传入每个 ``KeyType`` 参数，　
 
-映射只能是 |storage| 的数据位置，因此只允许作为状态变量 或 作为函数内的 |storage| 引用 或 作为库函数的参数。
-它们不能用合约公有函数的参数或返回值。
-
-这些限制同样适用于包含映射的数组和结构体。
-
-可以将映射声明为 ``public`` ，然后来让 Solidity 创建一个 :ref:`getter 函数 <visibility-and-getters>`。
-``KeyType`` 将成为 getter 的必须参数，并且 getter 会返回 ``ValueType`` 。
-
-如果 ``ValueType`` 是一个映射。这时在使用 getter 时将需要递归地传入每个 ``KeyType`` 参数，　
-
-
-在下面的示例中，　``MappingExample`` 　合约定义了一个公共　``balances``　映射，键类型为 ``address``，值类型为 ``uint``，　
-将以太坊地址映射为 无符号整数值。 由于　``uint``　是值类型，因此getter返回与该类型匹配的值，
-可以在　``MappingLBC``　合约中看到合约在指定地址返回该值。
-
+在下面的示例中，``MappingExample`` 合约定义了一个公共的 ``balances`` 映射，键类型为 ``address``，值类型为 ``uint``，将以太坊地址映射到无符号整数值。
+由于 ``uint`` 是值类型，getter 返回与该类型匹配的值，可以在 ``MappingUser`` 合约中看到，它返回指定地址的值。
 
 .. code-block:: solidity
 
@@ -49,19 +40,33 @@
         }
     }
 
-    contract MappingLBC {
+    contract MappingUser {
         function f() public returns (uint) {
             MappingExample m = new MappingExample();
             m.update(100);
-            return m.balances(this);
+            return m.balances(address(this));
+        }
+    }
+
+下面的示例是一个简化版本的 `ERC20 代币 <https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol>`_。 ``_allowances`` 是另一个映射类型内部的映射类型的示例。
+
+在下面的示例中，为映射提供了可选的 ``KeyName`` 和 ``ValueName``。这不会影响任何合约功能或字节码，它仅为映射的 getter 的输入和输出设置 ``name`` 字段。
+
+.. code-block:: solidity
+
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity ^0.8.18;
+
+    contract MappingExampleWithNames {
+        mapping(address user => uint balance) public balances;
+
+        function update(uint newBalance) public {
+            balances[msg.sender] = newBalance;
         }
     }
 
 
-下面的例子是　`ERC20 token <https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol>`_　的简单版本．
-``_allowances`` 是一个嵌套mapping的例子．
-``_allowances`` 用来记录其他的账号，可以允许从其账号使用多少数量的币．
-
+下面的示例使用 ``_allowances`` 来记录其他人可以从你的账户中提取的金额。
 
 .. code-block:: solidity
 
@@ -70,8 +75,8 @@
 
     contract MappingExample {
 
-        mapping (address => uint256) private _balances;
-        mapping (address => mapping (address => uint256)) private _allowances;
+        mapping(address => uint256) private _balances;
+        mapping(address => mapping(address => uint256)) private _allowances;
 
         event Transfer(address indexed from, address indexed to, uint256 value);
         event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -113,12 +118,11 @@
 可迭代映射
 -----------------
 
-
-映射本身是无法遍历的，即无法枚举所有的键。不过，可以在它们之上实现一个数据结构来进行迭代。 例如，以下代码实现了
-``IterableMapping`` 库，然后　``User`` 合约可以添加数据，　``sum``　函数迭代求和所有值。
-
+不能遍历映射，即不能枚举它们的键。不过，可以在其上实现一个数据结构并对其进行迭代。
+例如，下面的代码实现了一个 ``IterableMapping`` 库，``User`` 合约随后向其添加数据，而 ``sum`` 函数则对所有值进行迭代求和。
 
 .. code-block:: solidity
+    :force:
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity ^0.8.8;
@@ -142,7 +146,6 @@
                 return true;
             else {
                 keyIndex = self.keys.length;
-
                 self.keys.push();
                 self.data[key].keyIndex = keyIndex + 1;
                 self.keys[keyIndex].key = key;
@@ -191,21 +194,21 @@
 
     // 如何使用
     contract User {
-        // Just a struct holding our data.
+        // 只是一个结构体来保存我们的数据。
         itmap data;
-        // Apply library functions to the data type.
+        // 将库函数应用于数据类型。
         using IterableMapping for itmap;
 
-        // Insert something
+        // 插入数据
         function insert(uint k, uint v) public returns (uint size) {
-            // This calls IterableMapping.insert(data, k, v)
+            // 这调用了 IterableMapping.insert(data, k, v)
             data.insert(k, v);
-            // We can still access members of the struct,
-            // but we should take care not to mess with them.
+            // 我们仍然可以访问结构体的成员，
+            // 但我们应该小心不要弄乱它们。
             return data.size;
         }
 
-        // Computes the sum of all stored data.
+        // 计算所有存储数据的总和。
         function sum() public view returns (uint s) {
             for (
                 Iterator i = data.iterateStart();
@@ -217,5 +220,3 @@
             }
         }
     }
-
-
