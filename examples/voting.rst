@@ -1,33 +1,32 @@
 .. include:: glossaries.rst
 
-********************
-投票合约
-********************
+.. index:: 投票, 选票
 
 .. _voting:
-.. index:: voting, ballot
 
-以下的合约有一些复杂，但展示了很多Solidity的语言特性。它实现了一个投票合约。
-当然，电子投票的主要问题是如何将投票权分配给正确的人员以及如何防止被操纵。
-我们不会在这里解决所有的问题，但至少我们会展示如何进行委托投票，同时，计票又是 **自动和完全透明的** 。
+******
+投票
+******
 
-我们的想法是为每个（投票）表决创建一份合约，为每个选项提供简称。
-然后作为合约的创造者——即主席，将给予每个独立的地址以投票权。
+以下合约相当复杂，但展示了许多 Solidity 的特性。它实现了一个投票合约。
+当然，电子投票的主要问题是如何将投票权分配给正确的人，以及如何防止操控。
+我们不会在这里解决所有问题，但至少我们会展示如何进行委托投票，以便投票计数是 **自动且完全透明** 的。
 
-地址后面的人可以选择自己投票，或者委托给他们信任的人来投票。
+这个想法是为每个选票创建一个合约，为每个选项提供一个简短的名称。
+然后，作为主席的合约创建者将逐个地址授予投票权。
 
-在投票时间结束时，``winningProposal()`` 将返回获得最多投票的提案。
+地址背后的人可以选择自己投票或将他们的投票委托给他们信任的人。
 
+在投票时间结束时，``winningProposal()`` 将返回获得最多票数的提案。
 
 .. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.7.0 <0.9.0;
-
     /// @title 委托投票
     contract Ballot {
-        // 这里声明了一个新的复合类型用于稍后的变量
-        // 它用来表示一个选民
+        // 这里声明了一个新的复合类型用于稍后的变量。
+        // 该变量用来表示一个选民。
         struct Voter {
             uint weight; // 计票的权重
             bool voted;  // 若为真，代表该人已投票
@@ -35,7 +34,7 @@
             uint vote;   // 投票提案的索引
         }
 
-        // 提案的类型
+        // 提案的类型.
         struct Proposal {
             bytes32 name;   // 简称（最长32个字节）
             uint voteCount; // 得票数
@@ -53,6 +52,7 @@
         constructor(bytes32[] memory proposalNames) {
             chairperson = msg.sender;
             voters[chairperson].weight = 1;
+
             //对于提供的每个提案名称，
             //创建一个新的 Proposal 对象并把它添加到数组的末尾。
             for (uint i = 0; i < proposalNames.length; i++) {
@@ -65,7 +65,7 @@
             }
         }
 
-        // 授权 `voter` 对这个（投票）表决进行投票
+        // 授权 `voter` 对这个（投票）表决进行投票。
         // 只有 `chairperson` 可以调用该函数。
         function giveRightToVote(address voter) external {
             // 若 `require` 的第一个参数的计算结果为 `false`，
@@ -106,9 +106,8 @@
                 require(to != msg.sender, "Found loop in delegation.");
             }
 
-            // `sender` 是一个引用, 相当于对 `voters[msg.sender].voted` 进行修改
             Voter storage delegate_ = voters[to];
-            
+
             // Voters cannot delegate to accounts that cannot vote.
             require(delegate_.weight >= 1);
 
@@ -116,7 +115,7 @@
             // modifies `voters[msg.sender]`.
             sender.voted = true;
             sender.delegate = to;
-            
+
             if (delegate_.voted) {
                 // 若被委托者已经投过票了，直接增加得票数
                 proposals[delegate_.vote].voteCount += sender.weight;
@@ -130,16 +129,18 @@
         /// 投给提案 `proposals[proposal].name`.
         function vote(uint proposal) external {
             Voter storage sender = voters[msg.sender];
+            require(sender.weight != 0, "Has no right to vote");
             require(!sender.voted, "Already voted.");
             sender.voted = true;
             sender.vote = proposal;
 
             // 如果 `proposal` 超过了数组的范围，则会自动抛出异常，并恢复所有的改动
+
             proposals[proposal].voteCount += sender.weight;
         }
 
         /// @dev 结合之前所有的投票，计算出最终胜出的提案
-        function winningProposal() external view
+        function winningProposal() public view
                 returns (uint winningProposal_)
         {
             uint winningVoteCount = 0;
@@ -150,9 +151,8 @@
                 }
             }
         }
-
         // 调用 winningProposal() 函数以获取提案数组中获胜者的索引，并以此返回获胜者的名称
-        function winnerName() public view
+        function winnerName() external view
                 returns (bytes32 winnerName_)
         {
             winnerName_ = proposals[winningProposal()].name;
@@ -160,10 +160,9 @@
     }
 
 
-可能的优化
+可能的改进
 =====================
 
-目前，需要许多交易来分配给所有参与者的投票权。
-此外，如果两个或更多的提案拥有相同的票数， ``winningProposal()`` 无法记录平局。
-你能想出一个办法来解决这些问题吗？
-
+目前，需要进行许多交易才能将投票权分配给所有参与者。
+此外，如果两个或多个提案的票数相同，``winningProposal()`` 无法记录平局。
+你能想到解决这些问题的方法吗？
