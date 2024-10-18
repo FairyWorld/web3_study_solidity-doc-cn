@@ -4,14 +4,13 @@
 分析编译器输出
 #############################
 
-查看编译器生成的汇编代码往往是有用的。生成的二进制文件，如 ``solc --bin contract.sol`` 的输出，通常很难阅读。
-建议使用参数 ``--asm`` 来分析汇编输出。
-即使是很大的合约，看一下改变前后的汇编结果的差异，往往是很有启发的。
+查看编译器生成的汇编代码通常是有用的。生成的二进制文件，即 ``solc --bin contract.sol`` 的输出，通常难以阅读。
+建议使用标志 ``--asm`` 来分析汇编输出。
+即使对于大型合约，查看更改前后的汇编可视化差异通常也非常有启发。
 
-以如下合约（文件名为 ``contract.sol`` ）为例：
+考虑以下合约（假设名为 ``contract.sol``）：
 
-
-.. code-block:: Solidity
+.. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.5.0 <0.9.0;
@@ -169,21 +168,19 @@
         auxdata: 0xa2646970667358221220a5874f19737ddd4c5d77ace1619e5160c67b3d4bedac75fce908fed32d98899864736f6c637827302e382e342d646576656c6f702e323032312e332e33302b636f6d6d69742e65613065363933380058
     }
 
+另外，上面的输出也可以通过 `Remix <https://remix.ethereum.org/>`_ 编译合约后，在“编译详情”选项下获得。
 
-另外，上面的输出也可以从 `Remix <https://remix.ethereum.org/>`_ ，
-在编译合约后的 "编译细节（Compilation Details）" 选项下获得。
+注意 ``asm`` 输出以创建/构造函数代码开始。
+部署代码作为子对象的一部分提供（在上述示例中，它是子对象 ``sub_0`` 的一部分）。
+``auxdata`` 字段对应于合约 :ref:`metadata <encoding-of-the-metadata-hash-in-the-bytecode>`。
+汇编输出中的注释指向源位置。请注意 ``#utility.yul`` 是一个内部生成的实用函数文件，可以使用标志 ``--combined-json
+generated-sources,generated-sources-runtime`` 获得。
 
-请注意， ``asm`` 输出以构建（creation）/构造器代码开始。
-部署代码是作为子对象的一部分提供的（在上面的例子中，它是 ``sub_0`` 的一部分）。
-``auxdata`` 字段对应于合约 :ref:`元数据 <encoding-of-the-metadata-hash-in-the-bytecode>` 。
-汇编输出中的注释指向源文件的位置。注意 ``#utility.yul`` 是一个内部生成的实用工具函数文件，
-可以使用标志选项 ``--combined-json generated-sources,generated-sources-runtime`` 获得。
-
-类似地，可以通过 ``solc --optimize --asm contract.sol`` 命令获得优化后的程序集。
-通常情况下，观察两个不同的Solidity 源代码是否会产生相同的优化代码是很有趣的。
-例如，查看表达式 ``(a * b) / c``， ``a * b / c`` 是否生成相同的字节码。
-可能的话，在剥离引用源代码位置的注释之后，获取相应程序输出的 ``diff`` 很容易进行代码对比。
+同样，优化后的汇编可以通过命令 ``solc --optimize --asm contract.sol`` 获得。
+通常，查看两个不同的 Solidity 源是否生成相同的优化代码是很有趣的。
+例如，查看表达式 ``(a * b) / c`` 和 ``a * b / c`` 是否生成相同的字节码。
+可以通过对相应的汇编输出进行 ``diff`` 来轻松完成，可能需要剥离引用源位置的注释。
 
 .. note::
 
-   ``--asm`` 的输出不是设计成机器可读的。因此，在solc的各个小版本之间，输出可能会有重大的变化。
+   ``--asm`` 输出并不是为了机器可读而设计的。因此，在 solc 的小版本之间，输出可能会有重大变化。
