@@ -1,23 +1,19 @@
 ###################
-其他语言的影响
+语言影响
 ###################
 
+Solidity 是一种 `花括号语言 <https://en.wikipedia.org/wiki/List_of_programming_languages_by_type#Curly_bracket_languages>`_，受到了几种知名编程语言的影响和启发。
 
-Solidity是一种 `花括号语言 <https://en.wikipedia.org/wiki/List_of_programming_languages_by_type#Curly-bracket_languages>`_，
-受到几种著名编程语言的影响和启发。
+Solidity 最深刻的影响来自 C++，但也借鉴了 Python、JavaScript 等语言的概念。
 
-Solidity受C++的影响最深，但也借用了Python，JavaScript等语言的概念。
+C++ 的影响可以在变量声明的语法、for 循环、函数重载的概念、隐式和显式类型转换以及许多其他细节中看到。
 
-从变量声明的语法，for循环，重载函数的概念，隐式和显式类型转换以及许多其他细节中可以看到C++的影响。
+在语言的早期，Solidity 部分受到 JavaScript 的影响。这是由于变量的函数级作用域和使用关键字 ``var``。
+从版本 0.4.0 开始，JavaScript 的影响减少了。
+现在，唯一剩下的与 JavaScript 的相似之处是函数使用关键字 ``function`` 定义。
+Solidity 还支持与 JavaScript 中可用的类似的导入语法和语义。
+除此之外，Solidity 看起来与大多数其他花括号语言相似，并且不再受到 JavaScript 的主要影响。
 
-在 Solidity 语言的早期，Solidity 曾经部分受JavaScript的影响，主要是由于变量的函数级范围和关键字 ``var`` 的使用。
-从0.4.0版本开始，JavaScript的影响已经减少。
-现在，剩下的与JavaScript的主要相似之处是，使用关键字 ``function`` 来定义函数。
-Solidity还支持导入语法和语义，这些都与JavaScript中的相似。
-除了这些点，Solidity看起来和其他大多数花括号语言一样，不再有主要的JavaScript影响。
-
-对Solidity的另一个影响是Python。
-Solidity的修改器是为了模拟Python的装饰器而添加的，但其功能受到很大限制。
-此外，多重继承，C3线性化和 ``super`` 关键字以及值和引用类型的一般赋值和复制语义都来自Python。
-
-
+另一个对 Solidity 的影响是 Python。
+Solidity 的修改器是试图模拟 Python 的装饰器，但功能受到更严格的限制。
+此外，多重继承、C3 线性化和 ``super`` 关键字也来自 Python，以及值类型和引用类型的一般赋值和复制语义。
