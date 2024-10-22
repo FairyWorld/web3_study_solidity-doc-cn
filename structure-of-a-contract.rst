@@ -4,137 +4,134 @@
 .. _contract_structure:
 
 ***********************
-合约结构
+合约的结构
 ***********************
 
+Solidity 中的合约类似于面向对象语言中的类。
+每个合约可以包含 :ref:`structure-state-variables`、:ref:`structure-functions`、:ref:`structure-function-modifiers`、:ref:`structure-events`、:ref:`structure-errors`、:ref:`structure-struct-types` 和 :ref:`structure-enum-types` 的声明。
+此外，合约可以从其他合约继承。
 
-在 Solidity 语言中，合约类似于其他面向对象编程语言中的**类**。
+还有一些特殊类型的合约，称为 :ref:`libraries<libraries>` 和 :ref:`interfaces<interfaces>`。
 
-每个合约中可以包含 :ref:`structure-state-variables`、 :ref:`structure-functions`、
-:ref:`structure-function-modifiers`, :ref:`structure-events`, :ref:`structure-errors`, :ref:`structure-struct-types` 和 :ref:`structure-enum-types` 的声明，且合约可以从其他合约继承。
-
-还有一些特殊的合约，如： :ref:`库<libraries>` 和 :ref:`接口<interfaces>`.
-
-专门的 :ref:`合约<contracts>` 章节会比本节包含更多的内容，本节用于帮助我们合约包含哪些内容，做一个简单的入门。
+关于 :ref:`contracts<contracts>` 的部分包含比本节更多的细节，本节旨在提供快速概述。
 
 .. _structure-state-variables:
 
 状态变量
 ===============
 
-状态变量是永久地存储在合约存储中的值。
+状态变量是其值永久存储在合约存储中，或者临时存储在每个交易结束时会被清除的瞬态存储中的变量。
+有关更多详细信息，请参见 :ref:`data locations <locations>`。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.0 <0.9.0;
 
-    contract TinyStorage {
-        uint storedXlbData; // 状态变量
+    contract SimpleStorage {
+        uint storedData; // 状态变量
         // ...
     }
 
-有效的状态变量类型参阅 :ref:`types` 章节，
-对状态变量可见性有可能的选择参阅 :ref:`visibility-and-getters` 。
+有关有效状态变量类型的信息，请参见 :ref:`types` 部分，以及 :ref:`visibility-and-getters` 以获取可选的可见性选择。
 
 .. _structure-functions:
 
 函数
 =========
 
-函数是代码的可执行单元。函数通常在合约内部定义，但也可以在合约外定义。
-
+函数是可执行的代码单元。函数通常在合约内部定义，但也可以在合约外部定义。
 
 .. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.7.1 <0.9.0;
 
-    contract TinyAuction {
-        function Mybid() public payable { // 定义函数
+    contract SimpleAuction {
+        function bid() public payable { // 函数
             // ...
         }
     }
 
-    // Helper function defined outside of a contract
+    // 在合约外部定义的辅助函数
     function helper(uint x) pure returns (uint) {
         return x * 2;
     }
 
-:ref:`function-calls` 可发生在合约内部或外部，且函数对其他合约有不同程度的可见性（ :ref:`visibility-and-getters`）。
-
-:ref:`函数<functions>` 可以接受 :ref:`参数和返回值<function-parameters-return-variables>`。
+:ref:`function-calls` 可以在内部或外部发生，并且对其他合约具有不同级别的 :ref:`visibility<visibility-and-getters>`。
+:ref:`Functions<functions>` 接受 :ref:`parameters and return variables<function-parameters-return-variables>` 以在它们之间传递参数和数值。
 
 .. _structure-function-modifiers:
 
-函数 |modifier|
+函数修改器
 ==================
 
-函数 |modifier| 可以用来以声明的方式修改函数语义（参阅合约章节中 :ref:`函数修改器<modifiers>`）。
+函数 |modifier| 可以以声明的方式修改函数的语义（请参见合约部分的 :ref:`modifiers`）。
 
-重载（Overloading）, 表示有同样的 |modifier| 名称但是有不同的参数的情况，这是不允许的。
+重载，即使用不同参数的相同修改器名称，是不可能的。
 
-而例如函数或 |modifier| 则可以被 :ref:`重写（overridden） <modifier-overriding>`.
-
+与函数一样，修改器可以被 :ref:`overridden <modifier-overriding>`。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.22 <0.9.0;
 
-    contract MyPurchase {
+    contract Purchase {
         address public seller;
 
         modifier onlySeller() { // 修改器
             require(
                 msg.sender == seller,
-                "Only seller can call this."
+                "只有卖家可以调用此函数。"
             );
             _;
         }
 
-        function abort() public onlySeller { // 修改器用法
+        function abort() public view onlySeller { // 修改器使用
             // ...
         }
     }
 
 .. _structure-events:
 
-事件 Event
-============
+事件
+======
 
 事件是能方便地调用以太坊虚拟机日志功能的接口。
 
 .. code-block:: solidity
 
-    pragma solidity >=0.4.21 <0.9.0;
-    contract TinyAuction {
-        event HighestBidIncreased(address bidder, uint amount); // 事件
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity ^0.8.22;
 
+    event HighestBidIncreased(address bidder, uint amount); // 事件
+
+    contract SimpleAuction {
         function bid() public payable {
             // ...
             emit HighestBidIncreased(msg.sender, msg.value); // 触发事件
         }
     }
 
-参阅合约章节中的 :ref:`events` 了解如何声明和在 DApp 中使用。
-
+有关事件如何声明和如何在 dapp 中使用的信息，请参见合约部分的 :ref:`events`。
 
 .. _structure-errors:
 
-错误(Errors)
-============
+错误
+======
 
-Solidity 为应对失败，允许用户定义 ``error`` 来描述错误的名称和数据。
-错误可以在  :ref:`revert statements <revert-statement>` 中使用，
-
-跟用错误字符串相比， ``error`` 更便宜并且允许你编码额外的数据，还可以用 NatSpec 为用户去描述错误。
+错误允许你为失败情况定义描述性名称和数据。
+错误可以在 :ref:`revert statements <revert-statement>` 中使用。
+与字符串描述相比，错误的成本更低，并且允许你编码额外的数据。还可以使用 NatSpec 来描述错误给用户。
 
 .. code-block:: solidity
 
     // SPDX-License-Identifier: GPL-3.0
     pragma solidity ^0.8.4;
 
-    /// 没有足够的资金用于转账， 参数 `requested` 表示需要的资金，`available` 表示仅有的资金。
-
+    /// 转账资金不足。请求的 `requested`，
+    /// 但只有 `available` 可用。
     error NotEnoughFunds(uint requested, uint available);
 
     contract Token {
@@ -149,21 +146,22 @@ Solidity 为应对失败，允许用户定义 ``error`` 来描述错误的名称
         }
     }
 
-在合约的 :ref:`errors` 查看更多的信息。
+有关更多信息，请参见合约部分的 :ref:`errors`。
 
 .. _structure-struct-types:
 
-结构体
+结构体类型
 =============
 
-结构体是可以将几个变量分组的自定义类型（参阅类型章节中的 :ref:`structs`）。
+结构是自定义定义的类型，可以将多个变量分组（请参见类型部分的 :ref:`structs`）。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.0 <0.9.0;
 
-    contract TinyBallot {
-        struct Voter { // 结构体
+    contract Ballot {
+        struct Voter { // 结构
             uint weight;
             bool voted;
             address delegate;
@@ -176,12 +174,13 @@ Solidity 为应对失败，允许用户定义 ``error`` 来描述错误的名称
 枚举类型
 ==========
 
-枚举可用来创建由一定数量的“常量值”构成的自定义类型（参阅类型章节中的 :ref:`enums`）。
+枚举可用于创建具有有限“常量值”集合的自定义类型（请参见类型部分的 :ref:`enums`）。
 
 .. code-block:: solidity
 
+    // SPDX-License-Identifier: GPL-3.0
     pragma solidity >=0.4.0 <0.9.0;
 
-    contract Upchain {
-        enum State { Created, Locked, InValid } // 枚举
+    contract Purchase {
+        enum State { Created, Locked, Inactive } // 枚举
     }
