@@ -57,7 +57,7 @@
 
 .. |pragma| raw:: html
 
-  <ruby>标识<rp>（</rp><rt>pragma</rt><rp>）</rp></ruby>
+  <ruby>编译指令<rp>（</rp><rt>pragma</rt><rp>）</rp></ruby>
 
 .. |storage| raw:: html
 
@@ -110,3 +110,8 @@
 .. |Events| raw:: html
 
   <ruby>事件<rp>（</rp><rt>Events</rt><rp>）</rp></ruby>
+
+.. |overloading| raw:: html
+
+  <ruby>重载<rp>（</rp><rt>overloading</rt><rp>）</rp></ruby>
+  
