@@ -16,7 +16,7 @@
 Solidity 还支持以 ``try``/``catch`` 语句形式的异常处理，但仅适用于 :ref:`外部函数调用 <external-function-calls>` 和合约创建调用。
 可以使用 :ref:`revert 语句 <revert-statement>` 创建错误。
 
-条件语句的括号 *不可以* 被省略，但单语句主体周围的花括号可以省略。
+条件语句的括号 *不可以* 被省略，但单语句主体周围的大括号可以省略。
 
 请注意，Solidity 中没有从非布尔类型到布尔类型的类型转换，如同 C 和 JavaScript 中那样，因此 ``if (1) { ... }`` 在 Solidity 中是 *无效的*。
 
