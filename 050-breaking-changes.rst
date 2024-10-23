@@ -3,7 +3,7 @@ Solidity v0.5.0 重大变更
 ********************************
 
 本节重点介绍了 Solidity 版本 0.5.0 中引入的主要重大变更，以及这些变更背后的原因和如何变更日志受影响的代码。
-完整列表请查看 `变更日志日志 <https://github.com/ethereum/solidity/releases/tag/v0.5.0>`_。
+完整列表请查看 `变更日志 <https://github.com/ethereum/solidity/releases/tag/v0.5.0>`_。
 
 .. note::
    使用 Solidity v0.5.0 编译的合约仍然可以与使用旧版本编译的合约甚至库进行交互，
