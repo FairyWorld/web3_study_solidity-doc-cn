@@ -1,90 +1,69 @@
 .. _path-resolution:
 
 **********************
-Import Path Resolution
+导入路径解析
 **********************
 
-In order to be able to support reproducible builds on all platforms, the Solidity compiler has to
-abstract away the details of the filesystem where source files are stored.
-Paths used in imports must work the same way everywhere while the command-line interface must be
-able to work with platform-specific paths to provide good user experience.
-This section aims to explain in detail how Solidity reconciles these requirements.
+为了能够在所有平台上支持可重现的构建，Solidity 编译器必须抽象出源文件存储的文件系统的细节。
+在导入中使用的路径必须在各处以相同的方式工作，而命令行接口必须能够处理特定于平台的路径，以提供良好的用户体验。
+本节旨在详细解释 Solidity 如何调和这些要求。
 
 .. index:: ! virtual filesystem, ! VFS, ! source unit name
 .. _virtual-filesystem:
 
-Virtual Filesystem
+虚拟文件系统
 ==================
 
-The compiler maintains an internal database (*virtual filesystem* or *VFS* for short) where each
-source unit is assigned a unique *source unit name* which is an opaque and unstructured identifier.
-When you use the :ref:`import statement <import>`, you specify an *import path* that references a
-source unit name.
+编译器维护一个内部数据库（简称 *虚拟文件系统* 或 *VFS*），其中每个源单元都被分配一个唯一的 *源单元名称*，这是一个不透明且无结构的标识符。
+当你使用 :ref:`import 语句 <import>` 时，你指定一个引用源单元名称的 *导入路径*。
 
 .. index:: ! import callback, ! Host Filesystem Loader
 .. _import-callback:
 
-Import Callback
+导入回调
 ---------------
 
-The VFS is initially populated only with files the compiler has received as input.
-Additional files can be loaded during compilation using an *import callback*, which is different
-depending on the type of compiler you use (see below).
-If the compiler does not find any source unit name matching the import path in the VFS, it invokes
-the callback, which is responsible for obtaining the source code to be placed under that name.
-An import callback is free to interpret source unit names in an arbitrary way, not just as paths.
-If there is no callback available when one is needed or if it fails to locate the source code,
-compilation fails.
+VFS 最初仅由编译器接收到的输入文件填充。
+在编译过程中，可以使用 **导入回调** 加载其他文件，具体取决于你使用的编译器类型（见下文）。
+如果编译器在 VFS 中找不到与导入路径匹配的源单元名称，它会调用回调，该回调负责获取要放置在该名称下的源代码。
+导入回调可以自由地以任意方式解释源单元名称，而不仅仅是作为路径。
+如果在需要时没有可用的回调，或者回调未能找到源代码，则编译失败。
 
-The command-line compiler provides the *Host Filesystem Loader* - a rudimentary callback
-that interprets a source unit name as a path in the local filesystem.
-The `JavaScript interface <https://github.com/ethereum/solc-js>`_ does not provide any by default,
-but one can be provided by the user.
-This mechanism can be used to obtain source code from locations other then the local filesystem
-(which may not even be accessible, e.g. when the compiler is running in a browser).
-For example the `Remix IDE <https://remix.ethereum.org/>`_ provides a versatile callback that
-lets you `import files from HTTP, IPFS and Swarm URLs or refer directly to packages in NPM registry
-<https://remix-ide.readthedocs.io/en/latest/import.html>`_.
+默认情况下，命令行编译器提供 **主机文件系统加载器** - 一个基本的回调，它将源单元名称解释为本地文件系统中的路径。
+可以使用 ``--no-import-callback`` 命令行选项禁用此回调。
+`JavaScript 接口 <https://github.com/ethereum/solc-js>`_ 默认不提供任何回调，但用户可以提供一个。
+此机制可用于从本地文件系统以外的位置获取源代码（例如，当编译器在浏览器中运行时，可能根本无法访问本地文件系统）。
+例如，`Remix IDE <https://remix.ethereum.org/>`_ 提供了一个多功能回调，允许你 `从 HTTP、IPFS 和 Swarm URL 导入文件或直接引用 NPM 注册表中的包 <https://remix-ide.readthedocs.io/en/latest/import.html>`_。
 
 .. note::
 
-    Host Filesystem Loader's file lookup is platform-dependent.
-    For example backslashes in a source unit name can be interpreted as directory separators or not
-    and the lookup can be case-sensitive or not, depending on the underlying platform.
+    主机文件系统加载器的文件查找依赖于平台。
+    例如，源单元名称中的反斜杠可以被解释为目录分隔符，也可以不被解释，并且查找可能是区分大小写的，也可能不是，这取决于底层平台。
 
-    For portability it is recommended to avoid using import paths that will work correctly only
-    with a specific import callback or only on one platform.
-    For example you should always use forward slashes since they work as path separators also on
-    platforms that support backslashes.
+    为了可移植性，建议避免使用仅在特定导入回调或仅在一个平台上正确工作的导入路径。
+    例如，你应该始终使用正斜杠，因为它们在支持反斜杠的平台上也可以作为路径分隔符。
 
-Initial Content of the Virtual Filesystem
+虚拟文件系统的初始内容
 -----------------------------------------
 
-The initial content of the VFS depends on how you invoke the compiler:
+VFS 的初始内容取决于你如何调用编译器：
 
-#. **solc / command-line interface**
+#. **solc / 命令行接口**
 
-   When you compile a file using the command-line interface of the compiler, you provide one or
-   more paths to files containing Solidity code:
+   当你使用编译器的命令行接口编译文件时，你提供一个或多个包含 Solidity 代码的文件路径：
 
    .. code-block:: bash
 
        solc contract.sol /usr/local/dapp-bin/token.sol
 
-   The source unit name of a file loaded this way is constructed by converting its path to a
-   canonical form and, if possible, making it relative to either the base path or one of the
-   include paths.
-   See :ref:`CLI Path Normalization and Stripping <cli-path-normalization-and-stripping>` for
-   a detailed description of this process.
+   以这种方式加载的文件的源单元名称是通过将其路径转换为规范形式构造的，并且如果可能的话，使其相对于基本路径或其中一个包含路径。
+   有关此过程的详细描述，请参见 :ref:`CLI 路径规范化和剥离 <cli-path-normalization-and-stripping>`。
 
-   .. index:: standard JSON
+   .. index:: 标准 JSON
 
-#. **Standard JSON**
+#. **标准 JSON**
 
-   When using the :ref:`Standard JSON <compiler-api>` API (via either the `JavaScript interface
-   <https://github.com/ethereum/solc-js>`_ or the ``--standard-json`` command-line option)
-   you provide input in JSON format, containing, among other things, the content of all your source
-   files:
+   当使用 :ref:`标准 JSON <compiler-api>` API（通过 `JavaScript 接口 <https://github.com/ethereum/solc-js>`_ 或 ``--standard-json`` 命令行选项）时，你以 JSON 格式提供输入，其中包含所有源文件的内容：
 
    .. code-block:: json
 
@@ -104,15 +83,13 @@ The initial content of the VFS depends on how you invoke the compiler:
            "settings": {"outputSelection": {"*": { "*": ["metadata", "evm.bytecode"]}}}
        }
 
-   The ``sources`` dictionary becomes the initial content of the virtual filesystem and its keys
-   are used as source unit names.
+   ``sources`` 字典成为虚拟文件系统的初始内容，其键用作源单元名称。
 
    .. _initial-vfs-content-standard-json-with-import-callback:
 
-#. **Standard JSON (via import callback)**
+#. **标准 JSON（通过导入回调）**
 
-   With Standard JSON it is also possible to tell the compiler to use the import callback to obtain
-   the source code:
+   使用标准 JSON 也可以告诉编译器使用导入回调来获取源代码：
 
    .. code-block:: json
 
@@ -129,41 +106,34 @@ The initial content of the VFS depends on how you invoke the compiler:
            "settings": {"outputSelection": {"*": { "*": ["metadata", "evm.bytecode"]}}}
        }
 
-   If an import callback is available, the compiler will give it the strings specified in
-   ``urls`` one by one, until one is loaded successfully or the end of the list is reached.
+   如果有可用的导入回调，编译器将逐个提供 ``urls`` 中指定的字符串，直到成功加载一个或到达列表末尾。
 
-   The source unit names are determined the same way as when using ``content`` - they are keys of
-   the ``sources`` dictionary and the content of ``urls`` does not affect them in any way.
+   源单元名称的确定方式与使用 ``content`` 时相同 - 它们是 ``sources`` 字典的键，而 ``urls`` 的内容对它们没有影响。
 
    .. index:: standard input, stdin, <stdin>
 
-#. **Standard input**
+#. **标准输入**
 
-   On the command line it is also possible to provide the source by sending it to compiler's
-   standard input:
+   在命令行上，也可以通过将源发送到编译器的标准输入来提供源：
 
    .. code-block:: bash
 
        echo 'import "./util.sol"; contract C {}' | solc -
 
-   ``-`` used as one of the arguments instructs the compiler to place the content of the standard
-   input in the virtual filesystem under a special source unit name: ``<stdin>``.
+   ``-`` 作为参数之一指示编译器将标准输入的内容放置在虚拟文件系统中的特殊源单元名称下： ``<stdin>``。
 
-Once the VFS is initialized, additional files can still be added to it only through the import
-callback.
+一旦 VFS 初始化，仍然只能通过导入回调向其添加其他文件。
 
 .. index:: ! import; path
 
-Imports
+导入
 =======
 
-The import statement specifies an *import path*.
-Based on how the import path is specified, we can divide imports into two categories:
+导入语句指定一个 **导入路径**。
+根据导入路径的指定方式，我们可以将导入分为两类：
 
-- :ref:`Direct imports <direct-imports>`, where you specify the full source unit name directly.
-- :ref:`Relative imports <relative-imports>`, where you specify a path starting with ``./`` or ``../``
-  to be combined with the source unit name of the importing file.
-
+- :ref:`直接导入 <direct-imports>`，你直接指定完整的源单元名称。
+- :ref:`相对导入 <relative-imports>`，你指定一个以 ``./`` 或 ``../`` 开头的路径，以与导入文件的源单元名称结合。
 
 .. code-block:: solidity
     :caption: contracts/contract.sol
@@ -171,151 +141,119 @@ Based on how the import path is specified, we can divide imports into two catego
     import "./math/math.sol";
     import "contracts/tokens/token.sol";
 
-In the above ``./math/math.sol`` and ``contracts/tokens/token.sol`` are import paths while the
-source unit names they translate to are ``contracts/math/math.sol`` and ``contracts/tokens/token.sol``
-respectively.
+在上面的 ``./math/math.sol`` 和 ``contracts/tokens/token.sol`` 是导入路径，而它们转换为的源单元名称分别是 ``contracts/math/math.sol`` 和 ``contracts/tokens/token.sol``。
 
 .. index:: ! direct import, import; direct
 .. _direct-imports:
 
-Direct Imports
+直接导入
 --------------
-
-An import that does not start with ``./`` or ``../`` is a *direct import*.
+一个不以 ``./`` 或 ``../`` 开头的导入是 **直接导入**。
 
 .. code-block:: solidity
 
-    import "/project/lib/util.sol";         // source unit name: /project/lib/util.sol
-    import "lib/util.sol";                  // source unit name: lib/util.sol
-    import "@openzeppelin/address.sol";     // source unit name: @openzeppelin/address.sol
-    import "https://example.com/token.sol"; // source unit name: https://example.com/token.sol
+    import "/project/lib/util.sol";         // 源单元名称: /project/lib/util.sol
+    import "lib/util.sol";                  // 源单元名称: lib/util.sol
+    import "@openzeppelin/address.sol";     // 源单元名称: @openzeppelin/address.sol
+    import "https://example.com/token.sol"; // 源单元名称: https://example.com/token.sol
 
-After applying any :ref:`import remappings <import-remapping>` the import path simply becomes the
-source unit name.
-
-.. note::
-
-    A source unit name is just an identifier and even if its value happens to look like a path, it
-    is not subject to the normalization rules you would typically expect in a shell.
-    Any ``/./`` or ``/../`` seguments or sequences of multiple slashes remain a part of it.
-    When the source is provided via Standard JSON interface it is entirely possible to associate
-    different content with source unit names that would refer to the same file on disk.
-
-When the source is not available in the virtual filesystem, the compiler passes the source unit name
-to the import callback.
-The Host Filesystem Loader will attempt to use it as a path and look up the file on disk.
-At this point the platform-specific normalization rules kick in and names that were considered
-different in the VFS may actually result in the same file being loaded.
-For example ``/project/lib/math.sol`` and ``/project/lib/../lib///math.sol`` are considered
-completely different in the VFS even though they refer to the same file on disk.
+在应用任何 :ref:`导入重映射 <import-remapping>` 后，导入路径简单地变为源单元名称。
 
 .. note::
 
-    Even if an import callback ends up loading source code for two different source unit names from
-    the same file on disk, the compiler will still see them as separate source units.
-    It is the source unit name that matters, not the physical location of the code.
+    源单元名称只是一个标识符，即使其值看起来像路径，它也不受你通常在 shell 中期望的规范化规则的约束。
+    任何 ``/./`` 或 ``/../`` 段或多个斜杠的序列仍然是其一部分。
+    当通过标准 JSON 接口提供源时，完全有可能将不同的内容与源单元名称关联，这些名称可能指向磁盘上的同一文件。
+
+当源在虚拟文件系统中不可用时，编译器将源单元名称传递给导入回调。
+主机文件系统加载器将尝试将其用作路径并在磁盘上查找文件。
+此时，特定于平台的规范化规则生效，在 VFS 中被视为不同的名称实际上可能导致加载同一文件。
+例如 ``/project/lib/math.sol`` 和 ``/project/lib/../lib///math.sol`` 在 VFS 中被视为完全不同，尽管它们指向磁盘上的同一文件。
+
+.. note::
+
+    即使导入回调最终从磁盘上的同一文件加载两个不同源单元名称的源代码，编译器仍会将它们视为独立的源单元。
+    重要的是源单元名称，而不是代码的物理位置。
 
 .. index:: ! relative import, ! import; relative
 .. _relative-imports:
 
-Relative Imports
+相对导入
 ----------------
 
-An import starting with ``./`` or ``../`` is a *relative import*.
-Such imports specify a path relative to the source unit name of the importing source unit:
+以 ``./`` 或 ``../`` 开头的导入是 **相对导入**。
+这样的导入指定相对于导入源单元的源单元名称的路径：
 
 .. code-block:: solidity
     :caption: /project/lib/math.sol
 
-    import "./util.sol" as util;    // source unit name: /project/lib/util.sol
-    import "../token.sol" as token; // source unit name: /project/token.sol
+    import "./util.sol" as util;    // 源单元名称: /project/lib/util.sol
+    import "../token.sol" as token; // 源单元名称: /project/token.sol
 
 .. code-block:: solidity
     :caption: lib/math.sol
 
-    import "./util.sol" as util;    // source unit name: lib/util.sol
-    import "../token.sol" as token; // source unit name: token.sol
+    import "./util.sol" as util;    // 源单元名称: lib/util.sol
+    import "../token.sol" as token; // 源单元名称: token.sol
 
 .. note::
 
-    Relative imports **always** start with ``./`` or ``../`` so ``import "util.sol"``, unlike
-    ``import "./util.sol"``, is a direct import.
-    While both paths would be considered relative in the host filesystem, ``util.sol`` is actually
-    absolute in the VFS.
+    相对导入 **始终** 以 ``./`` 或 ``../`` 开头，因此 ``import "util.sol"``, 与 ``import "./util.sol"`` 不同，是直接导入。
+    虽然在主机文件系统中这两个路径都被视为相对路径，但 ``util.sol`` 在 VFS 中实际上是绝对的。
 
-Let us define a *path segment* as any non-empty part of the path that does not contain a separator
-and is bounded by two path separators.
-A separator is a forward slash or the beginning/end of the string.
-For example in ``./abc/..//`` there are three path segments: ``.``, ``abc`` and ``..``.
+让我们将 *路径段* 定义为路径中任何不包含分隔符的非空部分，并且由两个路径分隔符界定。
+分隔符是正斜杠或字符串的开始/结束。
+例如在 ``./abc/..//`` 中有三个路径段: ``.``, ``abc`` 和 ``..``。
 
-The compiler computes a source unit name from the import path in the following way:
+编译器根据导入路径将导入解析为源单元名称，方式如下：
 
-1. First a prefix is computed
+#. 我们从导入源单元的源单元名称开始。
+#. 从解析名称中删除最后一个带前导斜杠的路径段。
+#. 然后，对于导入路径中的每个段，从最左边的段开始：
 
-    - Prefix is initialized with the source unit name of the importing source unit.
-    - The last path segment with preceding slashes is removed from the prefix.
-    - Then, the leading part of the normalized import path, consisting only of ``/`` and ``.``
-      characters is considered.
-      For every ``..`` segment found in this part the last path segment with preceding slashes is
-      removed from the prefix.
+    - 如果段是 ``.``, 则跳过。
+    - 如果段是 ``..``, 则从解析名称中删除最后一个带前导斜杠的路径段。
+    - 否则，将该段（如果解析名称不为空，则前面加一个斜杠）附加到解析名称。
 
-2. Then the prefix is prepended to the normalized import path.
-   If the prefix is non-empty, a single slash is inserted between it and the import path.
+删除最后一个带前导斜杠的路径段的理解如下：
 
-The removal of the last path segment with preceding slashes is understood to
-work as follows:
+1. 删除最后一个斜杠之后的所有内容（即 ``a/b//c.sol`` 变为 ``a/b//``）。
+2. 删除所有尾随斜杠（即 ``a/b//`` 变为 ``a/b``）。
 
-1. Everything past the last slash is removed (i.e. ``a/b//c.sol`` becomes ``a/b//``).
-2. All trailing slashes are removed (i.e. ``a/b//`` becomes ``a/b``).
+请注意，该过程根据 UNIX 路径的常规规则规范化来自导入路径的解析源单元名称部分，即所有 ``.`` 和 ``..`` 被删除，多个斜杠被压缩为一个。
+另一方面，来自导入模块的源单元名称的部分保持未规范化。
+这确保了 ``protocol://`` 部分不会变成 ``protocol:/``，如果导入文件是通过 URL 识别的。
 
-The normalization rules are the same as for UNIX paths, namely:
-
-- All the internal ``.`` segments are removed.
-- Every internal ``..`` segment backtracks one level up in the hierarchy.
-- Multiple slashes are squashed into a single one.
-
-Note that normalization is performed only on the import path.
-The source unit name of the importing module that is used for the prefix remains unnormalized.
-This ensures that the ``protocol://`` part does not turn into ``protocol:/`` if the importing file
-is identified with a URL.
-
-If your import paths are already normalized, you can expect the above algorithm to produce very
-intuitive results.
-Here are some examples of what you can expect if they are not:
+如果你的导入路径已经规范化，你可以期待上述算法产生非常直观的结果。
+以下是一些示例，如果它们没有规范化，你可以期待的结果：
 
 .. code-block:: solidity
     :caption: lib/src/../contract.sol
 
-    import "./util/./util.sol";         // source unit name: lib/src/../util/util.sol
-    import "./util//util.sol";          // source unit name: lib/src/../util/util.sol
-    import "../util/../array/util.sol"; // source unit name: lib/src/array/util.sol
-    import "../.././../util.sol";       // source unit name: util.sol
-    import "../../.././../util.sol";    // source unit name: util.sol
+    import "./util/./util.sol";         // 源单元名称: lib/src/../util/util.sol
+    import "./util//util.sol";          // 源单元名称: lib/src/../util/util.sol
+    import "../util/../array/util.sol"; // 源单元名称: lib/src/array/util.sol
+    import "../.././../util.sol";       // 源单元名称: util.sol
+    import "../../.././../util.sol";    // 源单元名称: util.sol
 
 .. note::
 
-    The use of relative imports containing leading ``..`` segments is not recommended.
-    The same effect can be achieved in a more reliable way by using direct imports with
-    :ref:`base path and include paths <base-and-include-paths>`.
+    不推荐使用包含前导 ``..`` 段的相对导入。
+    可以通过使用直接导入和 :ref:`基本路径和包含路径 <base-and-include-paths>` 以更可靠的方式实现相同的效果。
 
 .. index:: ! base path, ! --base-path, ! include paths, ! --include-path
 .. _base-and-include-paths:
 
-Base Path and Include Paths
+基本路径和包含路径
 ===========================
 
-The base path and include paths represent directories that the Host Filesystem Loader will load files from.
-When a source unit name is passed to the loader, it prepends the base path to it and performs a
-filesystem lookup.
-If the lookup does not succeed, the same is done with all directories on the include path list.
+基本路径和包含路径表示主机文件系统加载器将从中加载文件的目录。
+当源单元名称传递给加载器时，它会将基本路径添加到源单元名称前面并执行文件系统查找。
+如果查找不成功，则对包含路径列表中的所有目录执行相同操作。
 
-It is recommended to set the base path to the root directory of your project and use include paths to
-specify additional locations that may contain libraries your project depends on.
-This lets you import from these libraries in a uniform way, no matter where they are located in the
-filesystem relative to your project.
-For example, if you use npm to install packages and your contract imports
-``@openzeppelin/contracts/utils/Strings.sol``, you can use these options to tell the compiler that
-the library can be found in one of the npm package directories:
+建议将基本路径设置为项目的根目录，并使用包含路径指定可能包含项目依赖库的其他位置。
+这使你可以以统一的方式从这些库中导入，无论它们在文件系统中相对于项目的位置如何。
+例如，如果你使用 npm 安装包，并且你的合约导入 ``@openzeppelin/contracts/utils/Strings.sol``，你可以使用这些选项告诉编译器库可以在 npm 包目录之一中找到：
 
 .. code-block:: bash
 
@@ -324,88 +262,63 @@ the library can be found in one of the npm package directories:
         --include-path node_modules/ \
         --include-path /usr/local/lib/node_modules/
 
-Your contract will compile (with the same exact metadata) no matter whether you install the library
-in the local or global package directory or even directly under your project root.
+无论你是在本地包目录、全局包目录还是直接在项目根目录下安装库，你的合约都将编译（具有完全相同的元数据）。
 
-By default the base path is empty, which leaves the source unit name unchanged.
-When the source unit name is a relative path, this results in the file being looked up in the
-directory the compiler has been invoked from.
-It is also the only value that results in absolute paths in source unit names being actually
-interpreted as absolute paths on disk.
-If the base path itself is relative, it is interpreted as relative to the current working directory
-of the compiler.
+默认情况下，基本路径为空，这使源单元名称保持不变。
+当源单元名称是相对路径时，这会导致在编译器被调用的目录中查找文件。
+它也是唯一一个使源单元名称中的绝对路径实际上被解释为磁盘上的绝对路径的值。
+如果基本路径本身是相对的，则相对于编译器的当前工作目录进行解释。
 
 .. note::
 
-    Include paths cannot have empty values and must be used together with a non-empty base path.
+    包含路径不能有空值，必须与非空基本路径一起使用。
 
 .. note::
 
-    Include paths and base path can overlap as long as it does not make import resolution ambiguous.
-    For example, you can specify a directory inside base path as an include directory or have an
-    include directory that is a subdirectory of another include directory.
-    The compiler will only issue an error if the source unit name passed to the Host Filesystem
-    Loader represents an existing path when combined with multiple include paths or an include path
-    and base path.
-
+    包含路径和基本路径可以重叠，只要不使导入解析模糊。
+    例如，你可以将基本路径中的目录指定为包含目录，或者有一个包含目录是另一个包含目录的子目录。
+    只有当传递给主机文件系统加载器的源单元名称与多个包含路径或包含路径和基本路径结合时表示现有路径时，编译器才会发出错误。
 .. _cli-path-normalization-and-stripping:
 
-CLI Path Normalization and Stripping
-------------------------------------
+CLI 路径规范化和剥离
+--------------------
 
-On the command line the compiler behaves just as you would expect from any other program:
-it accepts paths in a format native to the platform and relative paths are relative to the current
-working directory.
-The source unit names assigned to files whose paths are specified on the command line, however,
-should not change just because the project is being compiled on a different platform or because the
-compiler happens to have been invoked from a different directory.
-To achieve this, paths to source files coming from the command line must be converted to a canonical
-form, and, if possible, made relative to the base path or one of the include paths.
+在命令行中，编译器的行为与你对其他程序的期望一致：
+它接受平台本地格式的路径，相对路径相对于当前工作目录。
+然而，命令行中指定路径的文件所分配的源单元名称不应因项目在不同平台上编译或编译器从不同目录调用而改变。
+为此，来自命令行的源文件路径必须转换为规范形式，并且如果可能，变为相对于基本路径或某个包含路径。
 
-The normalization rules are as follows:
+规范化规则如下：
 
-- If a path is relative, it is made absolute by prepending the current working directory to it.
-- Internal ``.`` and ``..`` segments are collapsed.
-- Platform-specific path separators are replaced with forward slashes.
-- Sequences of multiple consecutive path separators are squashed into a single separator (unless
-  they are the leading slashes of an `UNC path <https://en.wikipedia.org/wiki/Path_(computing)#UNC>`_).
-- If the path includes a root name (e.g. a drive letter on Windows) and the root is the same as the
-  root of the current working directory, the root is replaced with ``/``.
-- Symbolic links in the path are **not** resolved.
+- 如果路径是相对的，则通过在其前面添加当前工作目录来使其变为绝对路径。
+- 内部的 ``.`` 和 ``..`` 段被折叠。
+- 平台特定的路径分隔符被替换为正斜杠。
+- 多个连续的路径分隔符序列被压缩为一个分隔符（除非它们是 `UNC 路径 <https://en.wikipedia.org/wiki/Path_(computing)#UNC>`_ 的前导斜杠）。
+- 如果路径包含根名称（例如 Windows 上的驱动器字母），并且根与当前工作目录的根相同，则根被替换为 ``/``。
+- 路径中的符号链接 **不** 被解析。
 
-  - The only exception is the path to the current working directory prepended to relative paths in
-    the process of making them absolute.
-    On some platforms the working directory is reported always with symbolic links resolved so for
-    consistency the compiler resolves them everywhere.
+  - 唯一的例外是相对路径前面添加的当前工作目录路径，以使其变为绝对路径。
+    在某些平台上，工作目录总是报告为解析了符号链接，因此为了保持一致性，编译器在所有地方解析它们。
 
-- The original case of the path is preserved even if the filesystem is case-insensitive but
-  `case-preserving <https://en.wikipedia.org/wiki/Case_preservation>`_ and the actual case on
-  disk is different.
+- 即使文件系统不区分大小写，路径的原始大小写也会被保留，但 `保留大小写 <https://en.wikipedia.org/wiki/Case_preservation>`_ 和磁盘上的实际大小写不同。
 
 .. note::
 
-    There are situations where paths cannot be made platform-independent.
-    For example on Windows the compiler can avoid using drive letters by referring to the root
-    directory of the current drive as ``/`` but drive letters are still necessary for paths leading
-    to other drives.
-    You can avoid such situations by ensuring that all the files are available within a single
-    directory tree on the same drive.
+    有些情况下路径无法变得平台无关。
+    例如在 Windows 上，编译器可以通过将当前驱动器的根目录称为 ``/`` 来避免使用驱动器字母，但指向其他驱动器的路径仍然需要驱动器字母。
+    你可以通过确保所有文件都在同一驱动器上的单个目录树中来避免这种情况。
 
-After normalization the compiler attempts to make the source file path relative.
-It tries the base path first and then the include paths in the order they were given.
-If the base path is empty or not specified, it is treated as if it was equal to the path to the
-current working directory (with all symbolic links resolved).
-The result is accepted only if the normalized directory path is the exact prefix of the normalized
-file path.
-Otherwise the file path remains absolute.
-This makes the conversion unambiguous and ensures that the relative path does not start with ``../``.
-The resulting file path becomes the source unit name.
+在规范化后，编译器尝试使源文件路径相对。
+它首先尝试基本路径，然后按给定顺序尝试包含路径。
+如果基本路径为空或未指定，则将其视为等于当前工作目录的路径（所有符号链接已解析）。
+只有当规范化的目录路径是规范化的文件路径的确切前缀时，结果才被接受。
+否则，文件路径保持绝对。这使得转换没有歧义，并确保相对路径不以 ``../`` 开头。
+结果文件路径成为源单元名称。
 
 .. note::
 
-    The relative path produced by stripping must remain unique within the base path and include paths.
-    For example the compiler will issue an error for the following command if both
-    ``/project/contract.sol`` and ``/lib/contract.sol`` exist:
+    通过剥离生成的相对路径必须在基本路径和包含路径中保持唯一。
+    例如，如果 ``/project/contract.sol`` 和 ``/lib/contract.sol`` 都存在，编译器将对以下命令发出错误：
 
     .. code-block:: bash
 
@@ -413,34 +326,30 @@ The resulting file path becomes the source unit name.
 
 .. note::
 
-    Prior to version 0.8.8, CLI path stripping was not performed and the only normalization applied
-    was the conversion of path separators.
-    When working with older versions of the compiler it is recommended to invoke the compiler from
-    the base path and to only use relative paths on the command line.
+    在版本 0.8.8 之前，未执行 CLI 路径剥离，唯一应用的规范化是路径分隔符的转换。
+    在使用旧版本编译器时，建议从基本路径调用编译器，并仅在命令行上使用相对路径。
 
 .. index:: ! allowed paths, ! --allow-paths, remapping; target
 .. _allowed-paths:
 
-Allowed Paths
-=============
+允许的路径
+==========
 
-As a security measure, the Host Filesystem Loader will refuse to load files from outside of a few
-locations that are considered safe by default:
+作为安全措施，主文件系统加载器将拒绝从默认认为安全的几个位置之外加载文件：
 
-- Outside of Standard JSON mode:
+- 在标准 JSON 模式下：
 
-  - The directories containing input files listed on the command line.
-  - The directories used as :ref:`remapping <import-remapping>` targets.
-    If the target is not a directory (i.e does not end with ``/``, ``/.`` or ``/..``) the directory
-    containing the target is used instead.
-  - Base path and include paths.
+  - 命令行中列出的输入文件所在的目录。
+  - 用作 :ref:`重映射 <import-remapping>` 目标的目录。
+    如果目标不是目录（即不以 ``/``, ``/.`` 或 ``/..`` 结尾），则使用包含目标的目录。
+  - 基本路径和包含路径。
 
-- In Standard JSON mode:
+- 在标准 JSON 模式下：
 
-  - Base path and include paths.
+  - 基本路径和包含路径。
 
-Additional directories can be whitelisted using the ``--allow-paths`` option.
-The option accepts a comma-separated list of paths:
+可以使用 ``--allow-paths`` 选项将其他目录列入白名单。
+该选项接受以逗号分隔的路径列表：
 
 .. code-block:: bash
 
@@ -451,103 +360,86 @@ The option accepts a comma-separated list of paths:
         --include-path=/lib/ \
         --allow-paths=../utils/,/tmp/libraries
 
-When the compiler is invoked with the command shown above, the Host Filesystem Loader will allow
-importing files from the following directories:
+当使用上述命令调用编译器时，主文件系统加载器将允许从以下目录导入文件：
 
-- ``/home/user/project/token/`` (because ``token/`` contains the input file and also because it is
-  the base path),
-- ``/lib/`` (because ``/lib/`` is one of the include paths),
-- ``/home/user/project/libs/`` (because ``libs/`` is a directory containing a remapping target),
-- ``/home/user/utils/`` (because of ``../utils/`` passed to ``--allow-paths``),
-- ``/tmp/libraries/`` (because of ``/tmp/libraries`` passed to ``--allow-paths``),
+- ``/home/user/project/token/``（因为 ``token/`` 包含输入文件，并且它是基本路径），
+- ``/lib/``（因为 ``/lib/`` 是包含路径之一），
+- ``/home/user/project/libs/``（因为 ``libs/`` 是包含重映射目标的目录），
+- ``/home/user/utils/``（因为 ``../utils/`` 被传递给 ``--allow-paths``），
+- ``/tmp/libraries/``（因为 ``/tmp/libraries`` 被传递给 ``--allow-paths``），
 
 .. note::
 
-    The working directory of the compiler is one of the paths allowed by default only if it
-    happens to be the base path (or the base path is not specified or has an empty value).
+    编译器的工作目录只有在它恰好是基本路径（或基本路径未指定或为空值）时，才是默认允许的路径之一。
 
 .. note::
 
-    The compiler does not check if allowed paths actually exist and whether they are directories.
-    Non-existent or empty paths are simply ignored.
-    If an allowed path matches a file rather than a directory, the file is considered whitelisted, too.
+    编译器不会检查允许的路径是否实际存在以及它们是否是目录。
+    不存在或为空的路径将被简单忽略。
+    如果允许的路径匹配文件而不是目录，则该文件也被视为列入白名单。
 
 .. note::
 
-    Allowed paths are case-sensitive even if the filesystem is not.
-    The case must exactly match the one used in your imports.
-    For example ``--allow-paths tokens`` will not match ``import "Tokens/IERC20.sol"``.
+    允许的路径是区分大小写的，即使文件系统不区分大小写。
+    大小写必须与你在导入中使用的完全匹配。
+    例如 ``--allow-paths tokens`` 将不匹配 ``import "Tokens/IERC20.sol"``。
 
 .. warning::
 
-    Files and directories only reachable through symbolic links from allowed directories are not
-    automatically whitelisted.
-    For example if ``token/contract.sol`` in the example above was actually a symlink pointing at
-    ``/etc/passwd`` the compiler would refuse to load it unless ``/etc/`` was one of the allowed
-    paths too.
+    仅通过符号链接从允许的目录访问的文件和目录不会自动列入白名单。
+    例如，如果上述示例中的 ``token/contract.sol`` 实际上是指向 ``/etc/passwd`` 的符号链接，则编译器将拒绝加载它，除非 ``/etc/`` 也是允许的路径之一。
 
 .. index:: ! remapping; import, ! import; remapping, ! remapping; context, ! remapping; prefix, ! remapping; target
 .. _import-remapping:
 
-Import Remapping
-================
+导入重映射
+==========
 
-Import remapping allows you to redirect imports to a different location in the virtual filesystem.
-The mechanism works by changing the translation between import paths and source unit names.
-For example you can set up a remapping so that any import from the virtual directory
-``github.com/ethereum/dapp-bin/library/`` would be seen as an import from ``dapp-bin/library/`` instead.
+导入重映射允许你将导入重定向到虚拟文件系统中的不同位置。
+该机制通过改变导入路径与源单元名称之间的转换来工作。
+例如，你可以设置重映射，使得来自虚拟目录 ``github.com/ethereum/dapp-bin/library/`` 的任何导入都被视为来自 ``dapp-bin/library/`` 的导入。
 
-You can limit the scope of a remapping by specifying a *context*.
-This allows creating remappings that apply only to imports located in a specific library or a specific file.
-Without a context a remapping is applied to every matching import in all the files in the virtual
-filesystem.
+你可以通过指定 *上下文* 来限制重映射的范围。
+这允许创建仅适用于特定库或特定文件中导入的重映射。
+没有上下文的重映射适用于虚拟文件系统中所有文件中每个匹配的导入。
 
-Import remappings have the form of ``context:prefix=target``:
+导入重映射的形式为 ``context:prefix=target``：
 
-- ``context`` must match the beginning of the source unit name of the file containing the import.
-- ``prefix`` must match the beginning of the source unit name resulting from the import.
-- ``target`` is the value the prefix is replaced with.
-
-For example, if you clone https://github.com/ethereum/dapp-bin/ locally to ``/project/dapp-bin``
-and run the compiler with:
+- ``context`` 必须匹配包含导入的文件的源单元名称的开头。
+- ``prefix`` 必须匹配导入所产生的源单元名称的开头。
+- ``target`` 是前缀被替换的值。
+例如，如果你将 https://github.com/ethereum/dapp-bin/ 克隆到本地的 ``/project/dapp-bin`` 并使用以下命令运行编译器：
 
 .. code-block:: bash
 
     solc github.com/ethereum/dapp-bin/=dapp-bin/ --base-path /project source.sol
 
-you can use the following in your source file:
+你可以在源文件中使用以下内容：
 
 .. code-block:: solidity
 
-    import "github.com/ethereum/dapp-bin/library/math.sol"; // source unit name: dapp-bin/library/math.sol
+    import "github.com/ethereum/dapp-bin/library/math.sol"; // 源单元名称: dapp-bin/library/math.sol
 
-The compiler will look for the file in the VFS under ``dapp-bin/library/math.sol``.
-If the file is not available there, the source unit name will be passed to the Host Filesystem
-Loader, which will then look in ``/project/dapp-bin/library/iterable_mapping.sol``.
+编译器将在 VFS 中查找该文件，路径为 ``dapp-bin/library/math.sol``。
+如果该文件不存在，源单元名称将传递给主文件系统加载器，后者将查找 ``/project/dapp-bin/library/math.sol``。
 
 .. warning::
 
-    Information about remappings is stored in contract metadata.
-    Since the binary produced by the compiler has a hash of the metadata embedded in it, any
-    modification to the remappings will result in different bytecode.
+    有关重映射的信息存储在合约元数据中。
+    由于编译器生成的二进制文件中嵌入了元数据的哈希，因此对重映射的任何修改都会导致不同的字节码。
 
-    For this reason you should be careful not to include any local information in remapping targets.
-    For example if your library is located in ``/home/user/packages/mymath/math.sol``, a remapping
-    like ``@math/=/home/user/packages/mymath/`` would result in your home directory being included in
-    the metadata.
-    To be able to reproduce the same bytecode with such a remapping on a different machine, you
-    would need to recreate parts of your local directory structure in the VFS and (if you rely on
-    Host Filesystem Loader) also in the host filesystem.
+    因此，你应该小心不要在重映射目标中包含任何本地信息。
+    例如，如果你的库位于 ``/home/user/packages/mymath/math.sol``，则重映射
+    如 ``@math/=/home/user/packages/mymath/`` 会导致你的主目录被包含在元数据中。
+    要能够在另一台机器上使用这样的重映射重现相同的字节码，你需要在 VFS 中重建本地目录结构的部分，
+    并且（如果你依赖于主文件系统加载器）也需要在主文件系统中重建。
 
-    To avoid having your local directory structure embedded in the metadata, it is recommended to
-    designate the directories containing libraries as *include paths* instead.
-    For example, in the example above ``--include-path /home/user/packages/`` would let you use
-    imports starting with ``mymath/``.
-    Unlike remapping, the option on its own will not make ``mymath`` appear as ``@math`` but this
-    can be achieved by creating a symbolic link or renaming the package subdirectory.
+    为了避免将本地目录结构嵌入元数据，建议将包含库的目录指定为 **包含路径**。
+    例如，在上面的示例中，``--include-path /home/user/packages/`` 将允许你使用以 ``mymath/`` 开头的导入。
+    与重映射不同，单独的选项不会使 ``mymath`` 显示为 ``@math``，但这可以通过创建符号链接或重命名包子目录来实现。
 
-As a more complex example, suppose you rely on a module that uses an old version of dapp-bin that
-you checked out to ``/project/dapp-bin_old``, then you can run:
+作为一个更复杂的示例，假设你依赖于一个使用旧版本 dapp-bin 的模块，
+你将其检出到 ``/project/dapp-bin_old``，然后你可以运行：
 
 .. code-block:: bash
 
@@ -556,112 +448,100 @@ you checked out to ``/project/dapp-bin_old``, then you can run:
          --base-path /project \
          source.sol
 
-This means that all imports in ``module2`` point to the old version but imports in ``module1``
-point to the new version.
+这意味着 ``module2`` 中的所有导入指向旧版本，而 ``module1`` 中的导入指向新版本。
 
-Here are the detailed rules governing the behaviour of remappings:
+以下是管理重映射行为的详细规则：
 
-#. **Remappings only affect the translation between import paths and source unit names.**
+#. **重映射仅影响导入路径与源单元名称之间的转换。**
 
-   Source unit names added to the VFS in any other way cannot be remapped.
-   For example the paths you specify on the command-line and the ones in ``sources.urls`` in
-   Standard JSON are not affected.
+   以其他方式添加到 VFS 的源单元名称无法重映射。
+   例如，你在命令行上指定的路径和标准 JSON 中的 ``sources.urls`` 不受影响。
 
    .. code-block:: bash
 
-       solc /project/=/contracts/ /project/contract.sol # source unit name: /project/contract.sol
+       solc /project/=/contracts/ /project/contract.sol # 源单元名称: /project/contract.sol
 
-   In the example above the compiler will load the source code from ``/project/contract.sol`` and
-   place it under that exact source unit name in the VFS, not under ``/contract/contract.sol``.
+   在上面的示例中，编译器将从 ``/project/contract.sol`` 加载源代码，并将其放置在 VFS 中的确切源单元名称下，而不是 ``/contract/contract.sol`` 下。
 
-#. **Context and prefix must match source unit names, not import paths.**
+#. **上下文和前缀必须与源单元名称匹配，而不是导入路径。**
 
-   - This means that you cannot remap ``./`` or ``../`` directly since they are replaced during
-     the translation to source unit name but you can remap the part of the name they are replaced
-     with:
+   - 这意味着你不能直接重映射 ``./`` 或 ``../``，因为它们在转换为源单元名称时被替换，但你可以重映射它们被替换的名称部分：
 
      .. code-block:: bash
 
-         solc ./=a/ /project/=b/ /project/contract.sol # source unit name: /project/contract.sol
+         solc ./=a/ /project/=b/ /project/contract.sol # 源单元名称: /project/contract.sol
 
      .. code-block:: solidity
          :caption: /project/contract.sol
 
-         import "./util.sol" as util; // source unit name: b/util.sol
+         import "./util.sol" as util; // 源单元名称: b/util.sol
 
-   - You cannot remap base path or any other part of the path that is only added internally by an
-     import callback:
+   - 你不能重映射基路径或任何其他仅由导入回调内部添加的路径部分：
 
      .. code-block:: bash
 
-         solc /project/=/contracts/ /project/contract.sol --base-path /project # source unit name: contract.sol
+         solc /project/=/contracts/ /project/contract.sol --base-path /project # 源单元名称: contract.sol
 
      .. code-block:: solidity
          :caption: /project/contract.sol
 
-         import "util.sol" as util; // source unit name: util.sol
+         import "util.sol" as util; // 源单元名称: util.sol
 
-#. **Target is inserted directly into the source unit name and does not necessarily have to be a valid path.**
+#. **目标直接插入源单元名称中，并不一定必须是有效路径。**
 
-   - It can be anything as long as the import callback can handle it.
-     In case of the Host Filesystem Loader this includes also relative paths.
-     When using the JavaScript interface you can even use URLs and abstract identifiers if
-     your callback can handle them.
+   - 它可以是任何内容，只要导入回调可以处理它。
+     在主文件系统加载器的情况下，这也包括相对路径。
+     使用 JavaScript 接口时，如果你的回调可以处理，你甚至可以使用 URL 和抽象标识符。
 
-   - Remapping happens after relative imports have already been resolved into source unit names.
-     This means that targets starting with ``./`` and ``../`` have no special meaning and are
-     relative to the base path rather than to the location of the source file.
+   - 重映射发生在相对导入已经解析为源单元名称之后。
+     这意味着以 ``./`` 和 ``../`` 开头的目标没有特殊含义，并且是相对于基路径而不是源文件的位置。
 
-   - Remapping targets are not normalized so ``@root/=./a/b//`` will remap ``@root/contract.sol``
-     to ``./a/b//contract.sol`` and not ``a/b/contract.sol``.
+   - 重映射目标未被规范化，因此 ``@root/=./a/b//`` 将重映射 ``@root/contract.sol``
+     为 ``./a/b//contract.sol`` 而不是 ``a/b/contract.sol``。
 
-   - If the target does not end with a slash, the compiler will not add one automatically:
+   - 如果目标不以斜杠结尾，编译器不会自动添加一个：
 
      .. code-block:: bash
 
-         solc /project/=/contracts /project/contract.sol # source unit name: /project/contract.sol
+         solc /project/=/contracts /project/contract.sol # 源单元名称: /project/contract.sol
 
      .. code-block:: solidity
          :caption: /project/contract.sol
 
-         import "/project/util.sol" as util; // source unit name: /contractsutil.sol
+         import "/project/util.sol" as util; // 源单元名称: /contractsutil.sol
 
-#. **Context and prefix are patterns and matches must be exact.**
+#. **上下文和前缀是模式，匹配必须完全一致。**
 
-   - ``a//b=c`` will not match ``a/b``.
-   - source unit names are not normalized so ``a/b=c`` will not match ``a//b`` either.
-   - Parts of file and directory names can match as well.
-     ``/newProject/con:/new=old`` will match ``/newProject/contract.sol`` and remap it to
-     ``oldProject/contract.sol``.
+   - ``a//b=c`` 不会匹配 ``a/b``。
+   - 源单元名称未被规范化，因此 ``a/b=c`` 也不会匹配 ``a//b``。
+   - 文件和目录名称的部分也可以匹配。
+     ``/newProject/con:/new=old`` 将匹配 ``/newProject/contract.sol`` 并重映射为
+     ``oldProject/contract.sol``。
 
-#. **At most one remapping is applied to a single import.**
+#. **最多对单个导入应用一个重映射。**
 
-   - If multiple remappings match the same source unit name, the one with the longest matching
-     prefix is chosen.
-   - If prefixes are identical, the one specified last wins.
-   - Remappings do not work on other remappings. For example ``a=b b=c c=d`` will not result in ``a``
-     being remapped to ``d``.
+   - 如果多个重映射匹配同一源单元名称，则选择匹配前缀最长的那个。
+   - 如果前缀相同，则最后指定的那个胜出。
+   - 重映射不适用于其他重映射。例如 ``a=b b=c c=d`` 不会导致 ``a`` 被重映射为 ``d``。
 
-#. **Prefix cannot be empty but context and target are optional.**
+#. **前缀不能为空，但上下文和目标是可选的。**
 
-   - If ``target`` is the empty string, ``prefix`` is simply removed from import paths.
-   - Empty ``context`` means that the remapping applies to all imports in all source units.
+   - 如果 ``target`` 是空字符串，则 ``prefix`` 仅从导入路径中删除。
+   - 空 ``context`` 意味着重映射适用于所有源单元中的所有导入。
 
 .. index:: Remix IDE, file://
 
-Using URLs in imports
+在导入中使用 URL
 =====================
 
-Most URL prefixes such as ``https://`` or ``data://`` have no special meaning in import paths.
-The only exception is ``file://`` which is stripped from source unit names by the Host Filesystem
-Loader.
+大多数 URL 前缀，如 ``https://`` 或 ``data://`` 在导入路径中没有特殊含义。
+唯一的例外是 ``file://``，它在主文件系统加载器中会从源单元名称中去除。
 
-When compiling locally you can use import remapping to replace the protocol and domain part with a
-local path:
+在本地编译时，你可以使用导入重映射将协议和域部分替换为本地路径：
 
 .. code-block:: bash
 
     solc :https://github.com/ethereum/dapp-bin=/usr/local/dapp-bin contract.sol
 
-Note the leading ``:``, which is necessary when the remapping context is empty.
-Otherwise the ``https:`` part would be interpreted by the compiler as the context.
+请注意前面的 ``:``, 当重映射上下文为空时，这是必要的。
+否则，``https:`` 部分将被编译器解释为上下文。
