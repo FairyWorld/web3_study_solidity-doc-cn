@@ -1,92 +1,72 @@
 .. _natspec:
 
-#######################
-NatSpec(注释描述)规范
-#######################
+##############
+NatSpec 规范
+##############
 
-Solidity contracts can use a special form of comments to provide rich
-documentation for functions, return variables and more. This special form is
-named the Ethereum Natural Language Specification Format (NatSpec).
+Solidity 合约可以使用一种特殊形式的注释来提供丰富的函数、返回变量等文档。
+这种特殊形式被称为以太坊自然语言规范规范（NatSpec）。
 
 .. note::
 
-  NatSpec was inspired by `Doxygen <https://en.wikipedia.org/wiki/Doxygen>`_.
-  While it uses Doxygen-style comments and tags, there is no intention to keep
-  strict compatibility with Doxygen. Please carefully examine the supported tags
-  listed below.
+  NatSpec 的灵感来源于 `Doxygen <https://en.wikipedia.org/wiki/Doxygen>`_。
+  虽然它使用 Doxygen 风格的注释和标签，但并不打算与 Doxygen 保持严格兼容。请仔细检查下面列出的支持标签。
 
-This documentation is segmented into developer-focused messages and end-user-facing
-messages. These messages may be shown to the end user (the human) at the
-time that they will interact with the contract (i.e. sign a transaction).
+本 documentation 分为面向开发者的消息和面向最终用户的消息。这些消息可能会在最终用户（人类）与合约交互时显示（即签署交易时）。
 
-It is recommended that Solidity contracts are fully annontated using NatSpec for
-all public interfaces (everything in the ABI).
+建议 Solidity 合约对所有公共接口（ABI 中的所有内容）进行完整的 NatSpec 注释。
 
-NatSpec includes the formatting for comments that the smart contract author will
-use, and which are understood by the Solidity compiler. Also detailed below is
-output of the Solidity compiler, which extracts these comments into a machine-readable
-format.
+NatSpec 包括智能合约作者将使用的注释规范，并且 Solidity 编译器可以理解这些注释。下面详细说明了 Solidity 编译器的输出，它将这些注释提取为机器可读的格式。
 
-NatSpec may also include annotations used by third-party tools. These are most likely
-accomplished via the ``@custom:<name>`` tag, and a good use case is analysis and verification
-tools.
-
+NatSpec 还可以包括第三方工具使用的注释。这些通常通过 ``@custom:<name>`` 标签实现，一个好的用例是分析和验证工具。
 
 .. _header-doc-example:
 
-文档举例
+文档示例
 =====================
 
-Documentation is inserted above each ``contract``, ``interface`` , ``library``,
-``function``, and ``event`` using the Doxygen notation format.
+文档插入在每个 ``contract``、``interface``、``library``、``function`` 和 ``event`` 之上，使用 Doxygen 注释规范。
+对于 NatSpec，``public`` 状态变量等同于 ``function``。
 
-A ``public`` state variable is equivalent to a ``function`` for the purposes of NatSpec.
+-  对于 Solidity，你可以选择 ``///`` 用于单行或多行注释，或使用 ``/**`` 并以 ``*/`` 结束。
 
--  For Solidity you may choose ``///`` for single or multi-line
-   comments, or ``/**`` and ending with ``*/``.
+-  对于 Vyper，使用 ``"""`` 并缩进到内部内容，带有裸注释。请参见 `Vyper documentation <https://docs.vyperlang.org/en/latest/natspec.html>`__。
 
--  For Vyper, use ``"""`` indented to the inner contents with bare
-   comments. See the `Vyper documentation <https://vyper.readthedocs.io/en/latest/natspec.html>`__.
-
-The following example shows a contract and a function using all available tags.
+以下示例展示了一个合约和一个函数，使用了所有可用标签。
 
 .. note::
 
-  NatSpec currently does NOT apply to public state variables (see
-  `solidity#3418 <https://github.com/ethereum/solidity/issues/3418>`__),
-  even if they are declared public and therefore do affect the ABI. 
+  Solidity 编译器仅在标签为外部或公共时解释标签。
+  你可以为内部和私有函数使用类似的注释，但这些将不会被解析。
 
-  The Solidity compiler only interprets tags if they are external or
-  public. You are welcome to use similar comments for your internal and
-  private functions, but those will not be parsed.
+  未来可能会有所改变。
 
-  This may change in the future.
+.. code-block:: solidity
 
-.. code:: Solidity
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity >=0.8.2 < 0.9.0;
 
-   // SPDX-License-Identifier: GPL-3.0
-   pragma solidity >=0.8.2 < 0.9.0;
+    /// @title A simulator for trees
+    /// @author Larry A. Gardner
+    /// @notice You can use this contract for only the most basic simulation
+    /// @dev All function calls are currently implemented without side effects
+    /// @custom:experimental This is an experimental contract.
+    contract Tree {
+        /// @notice Calculate tree age in years, rounded up, for live trees
+        /// @dev The Alexandr N. Tetearing algorithm could increase precision
+        /// @param rings The number of rings from dendrochronological sample
+        /// @return Age in years, rounded up for partial years
+        /// @return Name of the tree
+        function age(uint256 rings) external virtual pure returns (uint256, string memory) {
+            return (rings + 1, "tree");
+        }
 
-   /// @title A simulator for trees
-   /// @author Larry A. Gardner
-   /// @notice You can use this contract for only the most basic simulation
-   /// @dev All function calls are currently implemented without side effects
-   /// @custom:experimental This is an experimental contract.
-   contract Tree {
-       /// @notice Calculate tree age in years, rounded up, for live trees
-       /// @dev The Alexandr N. Tetearing algorithm could increase precision
-       /// @param rings The number of rings from dendrochronological sample
-       /// @return Age in years, rounded up for partial years
-       function age(uint256 rings) external pure returns (uint256) {
-           return rings + 1;
-       }
-
-      /// @notice Returns the amount of leaves the tree has.
-      /// @dev Returns only a fixed number.
-      function leaves() external virtual pure returns(uint256) {
-          return 2;
-      }
-  }
+        /// @notice Returns the amount of leaves the tree has.
+        /// @dev Returns only a fixed number.
+        function leaves() external virtual pure returns(uint256) {
+            return 2;
+        }
+    }
 
     contract Plant {
         function leaves() external virtual pure returns(uint256) {
@@ -95,145 +75,131 @@ The following example shows a contract and a function using all available tags.
     }
 
     contract KumquatTree is Tree, Plant {
-      function age(uint256 rings) external override pure returns (uint256) {
-          return rings + 2;
-      }
-
-    /// Return the amount of leaves that this specific kind of tree has
-    /// @inheritdoc Tree
-    function leaves() external override(Tree, Plant) pure returns(uint256) {
-        return 3;
+        function age(uint256 rings) external override pure returns (uint256, string memory) {
+            return (rings + 2, "Kumquat");
         }
-  }
+
+        /// Return the amount of leaves that this specific kind of tree has
+        /// @inheritdoc Tree
+        function leaves() external override(Tree, Plant) pure returns(uint256) {
+            return 3;
+        }
+    }
 
 .. _header-tags:
 
-标签Tags
-=========
+标签
+====
 
-All tags are optional. The following table explains the purpose of each
-NatSpec tag and where it may be used. As a special case, if no tags are
-used then the Solidity compiler will interpret a ``///`` or ``/**`` comment
-in the same way as if it were tagged with ``@notice``.
+所有标签都是可选的。下表解释了每个 NatSpec 标签的目的及其使用场景。
+作为特例，如果未使用标签，则 Solidity 编译器将以与 ``@notice`` 标签相同的方式解释 ``///`` 或 ``/**`` 注释。
 
 =============== ====================================================================================== =============================
 Tag                                                                                                    Context
 =============== ====================================================================================== =============================
-``@title``      A title that should describe the contract/interface                                    contract, library, interface
-``@author``     The name of the author                                                                 contract, library, interface
-``@notice``     Explain to an end user what this does                                                  contract, library, interface, function, public state variable, event
-``@dev``        Explain to a developer any extra details                                               contract, library, interface, function, state variable, event
-``@param``      Documents a parameter just like in Doxygen (must be followed by parameter name)        function, event
+``@title``      A title that should describe the contract/interface                                    contract, library, interface, struct, enum
+``@author``     The name of the author                                                                 contract, library, interface, struct, enum
+``@notice``     Explain to an end user what this does                                                  contract, library, interface, function, public state variable, event, struct, enum, error
+``@dev``        Explain to a developer any extra details                                               contract, library, interface, function, state variable, event, struct, enum, error
+``@param``      Documents a parameter just like in Doxygen (must be followed by parameter name)        function, event, error
 ``@return``     Documents the return variables of a contract's function                                function, public state variable
 ``@inheritdoc`` Copies all missing tags from the base function (must be followed by the contract name) function, public state variable
 ``@custom:...`` Custom tag, semantics is application-defined                                           everywhere
 =============== ====================================================================================== =============================
 
-If your function returns multiple values, like ``(int quotient, int remainder)``
-then use multiple ``@return`` statements in the same format as the ``@param`` statements.
+如果你的函数返回多个值，例如 ``(int quotient, int remainder)``则使用多个 ``@return`` 语句，格式与 ``@param`` 语句相同。
 
-Custom tags start with ``@custom:`` and must be followed by one or more lowercase letters or hyphens.
-It cannot start with a hyphen however. They can be used everywhere and are part of the developer documentation.
+自定义标签以 ``@custom:`` 开头，后面必须跟一个或多个小写字母或连字符。
+但不能以连字符开头。它们可以在任何地方使用，并且是开发者文档的一部分。
 
 .. _header-dynamic:
 
-Dynamic expressions
+动态表达式
 -------------------
 
-The Solidity compiler will pass through NatSpec documentation from your Solidity
-source code to the JSON output as described in this guide. The consumer of this
-JSON output, for example the end-user client software, may present this to the end-user directly or it may apply some pre-processing.
+Solidity 编译器将根据本指南将 NatSpec 文档从你的 Solidity 源代码传递到 JSON 输出。
+此 JSON 输出的消费者，例如最终用户客户端软件，可能会直接将其呈现给最终用户，或者可能会应用一些预处理。
 
-For example, some client software will render:
+例如，一些客户端软件将渲染：
 
 .. code:: Solidity
 
    /// @notice This function will multiply `a` by 7
 
-to the end-user as:
+给最终用户呈现为：
 
 .. code:: text
 
     This function will multiply 10 by 7
 
-if a function is being called and the input ``a`` is assigned a value of 7.
-
-Specifying these dynamic expressions is outside the scope of the Solidity
-documentation and you may read more at
-`the radspec project <https://github.com/aragon/radspec>`__.
+如果调用一个函数并且输入 ``a`` 被赋值为 10。
 
 .. _header-inheritance:
 
-Inheritance Notes
+继承注意事项
 -----------------
 
-Functions without NatSpec will automatically inherit the documentation of their
-base function. Exceptions to this are:
+没有 NatSpec 的函数将自动继承其基函数的文档。例外情况包括：
 
- * When the parameter names are different.
- * When there is more than one base function.
- * When there is an explicit ``@inheritdoc`` tag which specifies which contract should be used to inherit.
+* 当参数名称不同。
+* 当有多个基函数时。
+* 当有显式的 ``@inheritdoc`` 标签指定应使用哪个合约进行继承。
 
 .. _header-output:
 
 文档输出
 ====================
 
-When parsed by the compiler, documentation such as the one from the
-above example will produce two different JSON files. One is meant to be
-consumed by the end user as a notice when a function is executed and the
-other to be used by the developer.
-
-If the above contract is saved as ``ex1.sol`` then you can generate the
-documentation using:
+当被编译器解析时，来自上述示例的文档将生成两个不同的 JSON 文件。一个是供最终用户在执行函数时作为通知使用，另一个供开发者使用。
+如果上述合约保存为 ``ex1.sol``，则可以使用以下命令生成文档：
 
 .. code-block:: shell
 
    solc --userdoc --devdoc ex1.sol
 
-And the output is below.
+输出如下。
 
 .. note::
-    Starting Solidity version 0.6.11 the NatSpec output also contains a ``version`` and a ``kind`` field.
-    Currently the ``version`` is set to ``1`` and ``kind`` must be one of ``user`` or ``dev``.
-    In the future it is possible that new versions will be introduced, deprecating older ones.
+    从 Solidity 版本 0.6.11 开始，NatSpec 输出还包含 ``version`` 和 ``kind`` 字段。
+    当前 ``version`` 设置为 ``1``，而 ``kind`` 必须是 ``user`` 或 ``dev`` 之一。
+    将来可能会引入新版本，弃用旧版本。
 
 .. _header-user-doc:
 
 用户文档
 ------------------
 
-The above documentation will produce the following user documentation
-JSON file as output:
+上述文档将为 ``Tree`` 合约生成以下用户文档 JSON 文件作为输出：
 
 .. code-block:: json
 
     {
-      "version": 1,
-      "kind": "user",
+      "version" : 1,
+      "kind" : "user",
       "methods" :
       {
         "age(uint256)" :
         {
           "notice" : "Calculate tree age in years, rounded up, for live trees"
         }
+        "leaves()" :
+        {
+            "notice" : "Returns the amount of leaves the tree has."
+        }
       },
       "notice" : "You can use this contract for only the most basic simulation"
     }
 
-Note that the key by which to find the methods is the function's
-canonical signature as defined in the :ref:`Contract ABI <abi_function_selector>` and not simply the function's
-name.
+请注意，查找方法的关键是函数的规范签名，如 :ref:`合约 ABI <abi_function_selector>` 中定义的，而不仅仅是函数的名称。
 
 .. _header-developer-doc:
 
 开发者文档
 -----------------------
 
-Apart from the user documentation file, a developer documentation JSON
-file should also be produced and should look like this:
+除了用户文档文件外，还应生成开发者文档 JSON 文件，格式如下：
 
-.. code::
+.. code-block:: json
 
     {
       "version" : 1,
@@ -250,9 +216,15 @@ file should also be produced and should look like this:
           {
             "rings" : "The number of rings from dendrochronological sample"
           },
-          "return" : "age in years, rounded up for partial years"
+          "returns" : {
+            "_0" : "Age in years, rounded up for partial years",
+            "_1" : "Name of the tree"
+          }
+        },
+        "leaves()" :
+        {
+            "details" : "Returns only a fixed number."
         }
       },
       "title" : "A simulator for trees"
     }
-
