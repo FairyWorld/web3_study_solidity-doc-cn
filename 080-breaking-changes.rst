@@ -1,176 +1,133 @@
 ********************************
-Solidity v0.8.0 重大更新
+Solidity v0.8.0 重大变更
 ********************************
 
-This section highlights the main breaking changes introduced in Solidity
-version 0.8.0.
-For the full list check
-`the release changelog <https://github.com/ethereum/solidity/releases/tag/v0.8.0>`_.
+本节重点介绍了 Solidity 版本 0.8.0 中引入的主要重大变更。
+完整列表请查看 `变更日志 <https://github.com/ethereum/solidity/releases/tag/v0.8.0>`_。
 
-Silent Changes of the Semantics
+语义的静默变化
 ===============================
 
-This section lists changes where existing code changes its behaviour without
-the compiler notifying you about it.
+本节列出了现有代码在没有编译器通知的情况下改变其行为的变化。
 
-* Arithmetic operations revert on underflow and overflow. You can use ``unchecked { ... }`` to use
-  the previous wrapping behaviour.
+* 算术运算在下溢和上溢时会回退。你可以使用 ``unchecked { ... }`` 来使用之前的环绕行为。
 
-  Checks for overflow are very common, so we made them the default to increase readability of code,
-  even if it comes at a slight increase of gas costs.
+  溢出检查非常常见，因此我们将其设为默认，以提高代码的可读性，即使这会略微增加 gas 成本。
 
-* ABI coder v2 is activated by default.
+* ABI 编码器 v2 默认启用。
 
-  You can choose to use the old behaviour using ``pragma abicoder v1;``.
-  The pragma ``pragma experimental ABIEncoderV2;`` is still valid, but it is deprecated and has no effect.
-  If you want to be explicit, please use ``pragma abicoder v2;`` instead.
+  你可以选择使用旧行为，使用 ``pragma abicoder v1;``。
+  pragma ``pragma experimental ABIEncoderV2;`` 仍然有效，但已被弃用且没有效果。
+  如果你想要明确，请使用 ``pragma abicoder v2;``。
 
-  Note that ABI coder v2 supports more types than v1 and performs more sanity checks on the inputs.
-  ABI coder v2 makes some function calls more expensive and it can also make contract calls
-  revert that did not revert with ABI coder v1 when they contain data that does not conform to the
-  parameter types.
+  请注意，ABI 编码器 v2 支持比 v1 更多的类型，并对输入执行更多的有效性检查。
+  ABI 编码器 v2 使某些函数调用的成本更高，并且它还可能使合约调用
+  在包含不符合参数类型的数据时回退，而在使用 ABI 编码器 v1 时不会回退。
 
-* Exponentiation is right associative, i.e., the expression ``a**b**c`` is parsed as ``a**(b**c)``.
-  Before 0.8.0, it was parsed as ``(a**b)**c``.
+* 指数运算是右结合的，即表达式 ``a**b**c`` 被解析为 ``a**(b**c)``。
+  在 0.8.0 之前，它被解析为 ``(a**b)**c``。
 
-  This is the common way to parse the exponentiation operator.
+  这是解析指数运算符的常见方式。
 
-* Failing assertions and other internal checks like division by zero or arithmetic overflow do
-  not use the invalid opcode but instead the revert opcode.
-  More specifically, they will use error data equal to a function call to ``Panic(uint256)`` with an error code specific
-  to the circumstances.
+* 失败的断言和其他内部检查，如除以零或算术溢出，不使用无效操作码，而是使用回退操作码。
+  更具体地说，它们将使用等于对 ``Panic(uint256)`` 的函数调用的错误数据，错误代码特定于情况。
 
-  This will save gas on errors while it still allows static analysis tools to distinguish
-  these situations from a revert on invalid input, like a failing ``require``.
+  这将节省错误时的 gas ，同时仍然允许静态分析工具区分
+  这些情况与无效输入的回退，例如失败的 ``require``。
 
-* If a byte array in storage is accessed whose length is encoded incorrectly, a panic is caused.
-  A contract cannot get into this situation unless inline assembly is used to modify the raw representation of storage byte arrays.
+* 如果访问存储中长度编码不正确的字节数组，将导致恐慌。
+  合约无法进入这种情况，除非使用内联汇编修改存储字节数组的原始表示。
 
-* If constants are used in array length expressions, previous versions of Solidity would use arbitrary precision
-  in all branches of the evaluation tree. Now, if constant variables are used as intermediate expressions,
-  their values will be properly rounded in the same way as when they are used in run-time expressions.
+* 如果在数组长度表达式中使用常量，之前版本的 Solidity 会在评估树的所有分支中使用任意精度。
+  现在，如果常量变量用作中间表达式，它们的值将以与在运行时表达式中使用时相同的方式进行适当舍入。
 
-* The type ``byte`` has been removed. It was an alias of ``bytes1``.
+* 类型 ``byte`` 已被移除。它是 ``bytes1`` 的别名。
 
-New Restrictions
+新限制
 ================
 
-This section lists changes that might cause existing contracts to not compile anymore.
+本节列出了可能导致现有合约无法再编译的变化。
 
-* There are new restrictions related to explicit conversions of literals. The previous behaviour in
-  the following cases was likely ambiguous:
+* 与文字的显式转换相关的新限制。以下情况下的先前行为可能存在歧义：
 
-  1. Explicit conversions from negative literals and literals larger than ``type(uint160).max`` to
-     ``address`` are disallowed.
-  2. Explicit conversions between literals and an integer type ``T`` are only allowed if the literal
-     lies between ``type(T).min`` and ``type(T).max``. In particular, replace usages of ``uint(-1)``
-     with ``type(uint).max``.
-  3. Explicit conversions between literals and enums are only allowed if the literal can
-     represent a value in the enum.
-  4. Explicit conversions between literals and ``address`` type (e.g. ``address(literal)``) have the
-     type ``address`` instead of ``address payable``. One can get a payable address type by using an
-     explicit conversion, i.e., ``payable(literal)``.
+  1. 不允许将负文字和大于 ``type(uint160).max`` 的文字显式转换为 ``address``。
+  2. 仅当文字位于 ``type(T).min`` 和 ``type(T).max`` 之间时，才允许在文字和整数类型 ``T`` 之间进行显式转换。特别是，将 ``uint(-1)`` 替换为 ``type(uint).max``。
+  3. 仅当文字可以表示枚举中的值时，才允许在文字和枚举之间进行显式转换。
+  4. 在文字和 ``address`` 类型之间的显式转换（例如 ``address(literal)``）的类型为 ``address`` 而不是 ``address payable``。
+     可以通过使用显式转换来获得可支付地址类型，即 ``payable(literal)``。
 
-* :ref:`Address literals<address_literals>` have the type ``address`` instead of ``address
-  payable``. They can be converted to ``address payable`` by using an explicit conversion, e.g.
-  ``payable(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF)``.
+* :ref:`地址文字<address_literals>` 的类型为 ``address`` 而不是 ``address payable``。
+  它们可以通过使用显式转换转换为 ``address payable``，例如 ``payable(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF)``。
 
-* There are new restrictions on explicit type conversions. The conversion is only allowed when there
-  is at most one change in sign, width or type-category (``int``, ``address``, ``bytesNN``, etc.).
-  To perform multiple changes, use multiple conversions.
+* 显式类型转换的新限制。仅当在符号、宽度或类型类别（``int``、``address``、``bytesNN`` 等）中最多有一次变化时，才允许转换。
+  要进行多次变化，请使用多次转换。
 
-  Let us use the notation ``T(S)`` to denote the explicit conversion ``T(x)``, where, ``T`` and
-  ``S`` are types, and ``x`` is any arbitrary variable of type ``S``. An example of such a
-  disallowed conversion would be ``uint16(int8)`` since it changes both width (8 bits to 16 bits)
-  and sign (signed integer to unsigned integer). In order to do the conversion, one has to go
-  through an intermediate type. In the previous example, this would be ``uint16(uint8(int8))`` or
-  ``uint16(int16(int8))``. Note that the two ways to convert will produce different results e.g.,
-  for ``-1``. The following are some examples of conversions that are disallowed by this rule.
+  让我们使用符号 ``T(S)`` 来表示显式转换 ``T(x)``，其中 ``T`` 和 ``S`` 是类型，``x`` 是类型 ``S`` 的任意变量。
+  一个不允许的转换示例是 ``uint16(int8)``，因为它同时改变了宽度（8 位到 16 位）和符号（有符号整数到无符号整数）。
+  为了进行转换，必须经过一个中间类型。在前面的示例中，这将是 ``uint16(uint8(int8))`` 或 ``uint16(int16(int8))``。
+  请注意，这两种转换方式将产生不同的结果，例如，对于 ``-1``。
+  以下是一些被此规则禁止的转换示例。
 
-  - ``address(uint)`` and ``uint(address)``: converting both type-category and width. Replace this by
-    ``address(uint160(uint))`` and ``uint(uint160(address))`` respectively.
-  - ``payable(uint160)``, ``payable(bytes20)`` and ``payable(integer-literal)``: converting both
-    type-category and state-mutability. Replace this by ``payable(address(uint160))``,
-    ``payable(address(bytes20))`` and ``payable(address(integer-literal))`` respectively. Note that
-    ``payable(0)`` is valid and is an exception to the rule.
-  - ``int80(bytes10)`` and ``bytes10(int80)``: converting both type-category and sign. Replace this by
-    ``int80(uint80(bytes10))`` and ``bytes10(uint80(int80)`` respectively.
-  - ``Contract(uint)``: converting both type-category and width. Replace this by
-    ``Contract(address(uint160(uint)))``.
+  - ``address(uint)`` 和 ``uint(address)``：同时转换类型类别和宽度。将其替换为 ``address(uint160(uint))`` 和 ``uint(uint160(address))``。
+  - ``payable(uint160)``, ``payable(bytes20)`` 和 ``payable(integer-literal)``：同时转换类型类别和状态可变性。
+    将其替换为 ``payable(address(uint160))``, ``payable(address(bytes20))`` 和 ``payable(address(integer-literal))``。
+    请注意，``payable(0)`` 是有效的，并且是此规则的例外。
+  - ``int80(bytes10)`` 和 ``bytes10(int80)``：同时转换类型类别和符号。将其替换为 ``int80(uint80(bytes10))`` 和 ``bytes10(uint80(int80))``。
+  - ``Contract(uint)``：同时转换类型类别和宽度。将其替换为 ``Contract(address(uint160(uint)))``。
 
-  These conversions were disallowed to avoid ambiguity. For example, in the expression ``uint16 x =
-  uint16(int8(-1))``, the value of ``x`` would depend on whether the sign or the width conversion
-  was applied first.
+  这些转换被禁止以避免歧义。例如，在表达式 ``uint16 x = uint16(int8(-1))`` 中，``x`` 的值将取决于先应用符号转换还是宽度转换。
 
-* Function call options can only be given once, i.e. ``c.f{gas: 10000}{value: 1}()`` is invalid and has to be changed to ``c.f{gas: 10000, value: 1}()``.
+* 函数调用选项只能给出一次，即 ``c.f{gas: 10000}{value: 1}()`` 是无效的，必须更改为 ``c.f{gas: 10000, value: 1}()``。
 
-* The global functions ``log0``, ``log1``, ``log2``, ``log3`` and ``log4`` have been removed.
+* 全局函数 ``log0``、``log1``、``log2``、``log3`` 和 ``log4`` 已被移除。
 
-  These are low-level functions that were largely unused. Their behaviour can be accessed from inline assembly.
+  这些是大多数未使用的低级函数。它们的行为可以通过内联汇编访问。
 
-* ``enum`` definitions cannot contain more than 256 members.
+* ``enum`` 定义不能包含超过 256 个成员。
 
-  This will make it safe to assume that the underlying type in the ABI is always ``uint8``.
+  这将使得可以安全地假设 ABI 中的底层类型始终为 ``uint8``。
 
-* Declarations with the name ``this``, ``super`` and ``_`` are disallowed, with the exception of
-  public functions and events. The exception is to make it possible to declare interfaces of contracts
-  implemented in languages other than Solidity that do permit such function names.
+* 名为 ``this``、``super`` 和 ``_`` 的声明被禁止，公共函数和事件除外。这个例外是为了使得能够声明在其他语言中实现的合约接口，这些语言允许这样的函数名称。
 
-* Remove support for the ``\b``, ``\f``, and ``\v`` escape sequences in code.
-  They can still be inserted via hexadecimal escapes, e.g. ``\x08``, ``\x0c``, and ``\x0b``, respectively.
+* 移除对代码中 ``\b``、``\f`` 和 ``\v`` 转义序列的支持。
+  它们仍然可以通过十六进制转义插入，例如 ``\x08``、``\x0c`` 和 ``\x0b``。
 
-* The global variables ``tx.origin`` and ``msg.sender`` have the type ``address`` instead of
-  ``address payable``. One can convert them into ``address payable`` by using an explicit
-  conversion, i.e., ``payable(tx.origin)`` or ``payable(msg.sender)``.
+* 全局变量 ``tx.origin`` 和 ``msg.sender`` 的类型为 ``address`` 而不是 ``address payable``。
+  可以通过使用显式转换将它们转换为 ``address payable``，即 ``payable(tx.origin)`` 或 ``payable(msg.sender)``。
 
-  This change was done since the compiler cannot determine whether or not these addresses
-  are payable or not, so it now requires an explicit conversion to make this requirement visible.
+  这个变化是因为编译器无法确定这些地址是否可支付，因此现在需要显式转换以使这一要求可见。
 
-* Explicit conversion into ``address`` type always returns a non-payable ``address`` type. In
-  particular, the following explicit conversions have the type ``address`` instead of ``address
-  payable``:
+* 显式转换为 ``address`` 类型始终返回不可支付的 ``address`` 类型。特别是，以下显式转换的类型为 ``address`` 而不是 ``address payable``：
+  - ``address(u)`` 其中 ``u`` 是类型为 ``uint160`` 的变量。可以通过使用两个显式转换将 ``u`` 转换为类型 ``address payable``，即 ``payable(address(u))``。
+  - ``address(b)`` 其中 ``b`` 是类型为 ``bytes20`` 的变量。可以通过使用两个显式转换将 ``b`` 转换为类型 ``address payable``，即 ``payable(address(b))``。
+  - ``address(c)`` 其中 ``c`` 是一个合约。之前，这种转换的返回类型取决于合约是否可以接收以太（要么有接收函数，要么有可支付的回退函数）。
+    转换 ``payable(c)`` 的类型为 ``address payable``，仅在合约 ``c`` 可以接收以太时允许。一般来说，可以通过以下显式转换将 ``c`` 转换为类型 ``address payable``：``payable(address(c))``。
+    请注意，``address(this)`` 属于与 ``address(c)`` 相同的类别，并且适用相同的规则。
 
-  - ``address(u)`` where ``u`` is a variable of type ``uint160``. One can convert ``u``
-    into the type ``address payable`` by using two explicit conversions, i.e.,
-    ``payable(address(u))``.
-  - ``address(b)`` where ``b`` is a variable of type ``bytes20``. One can convert ``b``
-    into the type ``address payable`` by using two explicit conversions, i.e.,
-    ``payable(address(b))``.
-  - ``address(c)`` where ``c`` is a contract. Previously, the return type of this
-    conversion depended on whether the contract can receive Ether (either by having a receive
-    function or a payable fallback function). The conversion ``payable(c)`` has the type ``address
-    payable`` and is only allowed when the contract ``c`` can receive Ether. In general, one can
-    always convert ``c`` into the type ``address payable`` by using the following explicit
-    conversion: ``payable(address(c))``. Note that ``address(this)`` falls under the same category
-    as ``address(c)`` and the same rules apply for it.
+* 内联汇编中的 ``chainid`` 内置函数现在被视为 ``view`` 而不是 ``pure``。
 
-* The ``chainid`` builtin in inline assembly is now considered ``view`` instead of ``pure``.
+* 不再可以对无符号整数使用一元否定，只能对有符号整数使用。
 
-* Unary negation cannot be used on unsigned integers anymore, only on signed integers.
-
-Interface Changes
+接口更改
 =================
 
-* The output of ``--combined-json`` has changed: JSON fields ``abi``, ``devdoc``, ``userdoc`` and
-  ``storage-layout`` are sub-objects now. Before 0.8.0 they used to be serialised as strings.
+* ``--combined-json`` 的输出已更改：JSON 字段 ``abi``、``devdoc``、``userdoc`` 和 ``storage-layout`` 现在是子对象。在 0.8.0 之前，它们被序列化为字符串。
 
-* The "legacy AST" has been removed (``--ast-json`` on the commandline interface and ``legacyAST`` for standard JSON).
-  Use the "compact AST" (``--ast-compact--json`` resp. ``AST``) as replacement.
+* "遗留 AST" 已被移除（命令行接口上的 ``--ast-json`` 和标准 JSON 中的 ``legacyAST``）。使用 "紧凑 AST"（``--ast-compact-json`` 或 ``AST``）作为替代。
 
-* The old error reporter (``--old-reporter``) has been removed.
+* 旧的错误报告器（``--old-reporter``）已被移除。
 
-
-How to update your code
+如何更新你的代码
 =======================
 
-- If you rely on wrapping arithmetic, surround each operation with ``unchecked { ... }``.
-- Optional: If you use SafeMath or a similar library, change ``x.add(y)`` to ``x + y``, ``x.mul(y)`` to ``x * y`` etc.
-- Add ``pragma abicoder v1;`` if you want to stay with the old ABI coder.
-- Optionally remove ``pragma experimental ABIEncoderV2`` or ``pragma abicoder v2`` since it is redundant.
-- Change ``byte`` to ``bytes1``.
-- Add intermediate explicit type conversions if required.
-- Combine ``c.f{gas: 10000}{value: 1}()`` to ``c.f{gas: 10000, value: 1}()``.
-- Change ``msg.sender.transfer(x)`` to ``payable(msg.sender).transfer(x)`` or use a stored variable of ``address payable`` type.
-- Change ``x**y**z`` to ``(x**y)**z``.
-- Use inline assembly as a replacement for ``log0``, ..., ``log4``.
-- Negate unsigned integers by subtracting them from the maximum value of the type and adding 1 (e.g. ``type(uint256).max - x + 1``, while ensuring that `x` is not zero)
+- 如果你依赖于包装算术，请将每个操作包围在 ``unchecked { ... }`` 中。
+- 可选：如果你使用 SafeMath 或类似库，将 ``x.add(y)`` 更改为 ``x + y``，将 ``x.mul(y)`` 更改为 ``x * y`` 等等。
+- 如果你希望保留旧的 ABI 编码器，请添加 ``pragma abicoder v1;``。
+- 可选地移除 ``pragma experimental ABIEncoderV2`` 或 ``pragma abicoder v2``，因为它是多余的。
+- 将 ``byte`` 更改为 ``bytes1``。
+- 如有需要，添加中间显式类型转换。
+- 将 ``c.f{gas: 10000}{value: 1}()`` 合并为 ``c.f{gas: 10000, value: 1}()``。
+- 将 ``msg.sender.transfer(x)`` 更改为 ``payable(msg.sender).transfer(x)`` 或使用类型为 ``address payable`` 的存储变量。
+- 将 ``x**y**z`` 更改为 ``(x**y)**z``。
+- 使用内联汇编替代 ``log0``、...、``log4``。
+- 通过从该类型的最大值中减去无符号整数并加 1 来否定无符号整数（例如 ``type(uint256).max - x + 1``，同时确保 ``x`` 不为零）。
