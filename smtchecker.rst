@@ -403,7 +403,7 @@ SMTChecker 创建的验证目标类型也可以通过 CLI 选项 ``--model-check
 - 从空数组弹出: ``popEmptyArray``。
 - 超出边界的数组/固定字节索引访问: ``outOfBounds``。
 - 转账资金不足: ``balance``。
-- 以上所有: ``default``（仅限 CLI）。
+- 以上所有: ``default`` （仅限 CLI）。
 
 一个常见的目标子集可能是，例如：
 ``--model-checker-targets assert,overflow``。

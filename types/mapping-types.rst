@@ -20,8 +20,8 @@
 它们不能作为公开可见的合约函数的参数或返回参数。这些限制同样适用于包含映射的数组和结构体。
 
 可以将映射类型的状态变量标记为 ``public``，Solidity 会为你创建一个 :ref:`getter <visibility-and-getters>`。 
-``KeyType`` 成为 getter 的参数，名称为 ``KeyName``（如果指定）。
-如果 ``ValueType`` 是值类型或结构体，getter 返回 ``ValueType``，名称为 ``ValueName``（如果指定）。
+``KeyType`` 成为 getter 的参数，名称为 ``KeyName`` （如果指定）。
+如果 ``ValueType`` 是值类型或结构体，getter 返回 ``ValueType``，名称为 ``ValueName`` （如果指定）。
 如果 ``ValueType`` 是数组或映射，getter 将需要递归地传入每个 ``KeyType`` 参数，　
 
 在下面的示例中，``MappingExample`` 合约定义了一个公共的 ``balances`` 映射，键类型为 ``address``，值类型为 ``uint``，将以太坊地址映射到无符号整数值。

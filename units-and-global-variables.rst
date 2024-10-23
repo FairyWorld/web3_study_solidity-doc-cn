@@ -116,7 +116,7 @@
     函数 ``gasleft`` 以前被称为 ``msg.gas``，在版本 0.4.21 中被弃用，并在版本 0.5.0 中移除。
 
 .. note::
-    在版本 0.7.0 中，别名 ``now``（用于 ``block.timestamp``）已被移除。
+    在版本 0.7.0 中，别名 ``now`` （用于 ``block.timestamp``）已被移除。
 
 .. index:: abi, encoding, packed
 
@@ -291,7 +291,7 @@ ABI 编码和解码函数
 合约相关
 ----------------
 
-``this``（当前合约的类型）
+``this`` （当前合约的类型）
     当前合约，显式可转换为 :ref:`address`
 
 ``super``

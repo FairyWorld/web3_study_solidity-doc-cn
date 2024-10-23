@@ -36,7 +36,7 @@ Solidity v0.5.0 重大变更
 
 * 函数 ``.call()``, ``.delegatecall()``, ``staticcall()``,``keccak256()``, ``sha256()`` 和 ``ripemd160()`` 现在只接受单个 ``bytes`` 参数。
   此外，参数不再填充。此更改旨在更明确和清晰地说明参数是如何连接的。
-  将每个 ``.call()``（及其家族）更改为 ``.call("")``，将每个 ``.call(signature, a, b, c)`` 更改为使用 ``.call(abi.encodeWithSignature(signature, a, b, c))``（最后一个仅适用于值类型）。
+  将每个 ``.call()`` （及其家族）更改为 ``.call("")``，将每个 ``.call(signature, a, b, c)`` 更改为使用 ``.call(abi.encodeWithSignature(signature, a, b, c))`` （最后一个仅适用于值类型）。
   将每个 ``keccak256(a, b, c)`` 更改为 ``keccak256(abi.encodePacked(a, b, c))``。
   尽管这不是重大变更，但建议开发者将 ``x.call(bytes4(keccak256("f(uint256)")), a, b)`` 更改为 ``x.call(abi.encodeWithSignature("f(uint256)", a, b))``。
 
@@ -73,10 +73,10 @@ Solidity v0.5.0 重大变更
   如果你使用 :ref:`提取模式<withdrawal_pattern>`，你很可能不需要更改代码，因为 ``transfer``仅在 ``msg.sender`` 上使用，而不是存储的地址，并且 ``msg.sender`` 是一个 ``address payable``。
 
 * 由于 ``bytesX`` 在右侧填充和 ``uintY`` 在左侧填充可能导致意外的转换结果，因此不同大小的 ``bytesX`` 和 ``uintY`` 之间的转换现在不被允许。
-  现在必须在转换之前在类型内调整大小。例如，你可以将 ``bytes4``（4 字节）转换为 ``uint64``（8 字节），方法是先将 ``bytes4`` 变量转换为 ``bytes8``，然后再转换为 ``uint64``。
+  现在必须在转换之前在类型内调整大小。例如，你可以将 ``bytes4`` （4 字节）转换为 ``uint64`` （8 字节），方法是先将 ``bytes4`` 变量转换为 ``bytes8``，然后再转换为 ``uint64``。
   通过 ``uint32`` 转换时会得到相反的填充。在 v0.5.0 之前，任何 ``bytesX`` 和 ``uintY`` 之间的转换都会通过 ``uint8X`` 进行。例如 ``uint8(bytes3(0x291807))`` 将被转换为 ``uint8(uint24(bytes3(0x291807)))`` 结果是 ``0x07``）。
 
-* 在不可支付的函数中使用 ``msg.value``（或通过修改器引入它）是不允许的，作为安全功能。
+* 在不可支付的函数中使用 ``msg.value`` （或通过修改器引入它）是不允许的，作为安全功能。
   将函数转换为 ``payable`` 或为程序逻辑创建一个新的内部函数，该函数使用 ``msg.value``。
 
 * 出于清晰原因，命令行界面现在要求在使用标准输入作为源时加上 ``-``。
@@ -89,7 +89,7 @@ Solidity v0.5.0 重大变更
 命令行和 JSON 接口
 --------------------------------
 
-* 命令行选项``--formal``（用于生成进一步形式验证的 Why3 输出）已被弃用并且现在已被移除。一个新的形式验证模块 SMTChecker 通过``pragma experimental SMTChecker;``启用。
+* 命令行选项``--formal`` （用于生成进一步形式验证的 Why3 输出）已被弃用并且现在已被移除。一个新的形式验证模块 SMTChecker 通过``pragma experimental SMTChecker;``启用。
 
 * 命令行选项``--julia``因中间语言``Julia``重命名为``Yul``而被重命名为``--yul``。
 

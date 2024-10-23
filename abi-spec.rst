@@ -154,7 +154,7 @@ Solidity 支持上述所有类型，名称相同，除了元组。
 
   如果 ``Ti`` 是静态：
 
-    ``head(X(i)) = enc(X(i))`` 和 ``tail(X(i)) = ""``（空字符串）
+    ``head(X(i)) = enc(X(i))`` 和 ``tail(X(i)) = ""`` （空字符串）
 
   否则，即如果 ``Ti`` 是动态是动态类型时，它们被定义为：
 
@@ -175,7 +175,7 @@ Solidity 支持上述所有类型，名称相同，除了元组。
 
   即它被编码为一个具有 ``k`` 个相同类型元素的元组（即静态大小为 ``k`` 的数组），前缀为元素的数量。
 
-- ``bytes``，长度为 ``k``（假定为 ``uint256`` 类型）：
+- ``bytes``，长度为 ``k`` （假定为 ``uint256`` 类型）：
 
   ``enc(X) = enc(k) pad_right(X)``，即字节数被编码为一个 ``uint256``，后跟 ``X`` 的实际值作为字节序列，后跟最小数量的零字节，使得 ``len(enc(X))`` 是 32 的倍数。
 
@@ -229,8 +229,8 @@ Solidity 支持上述所有类型，名称相同，除了元组。
 因此，对于我们的 ``Foo`` 示例，如果我们想调用 ``bar``，参数为 ``["abc", "def"]``，我们将传递总共 68 字节，分解为：
 
 - ``0xfce353f6``：方法 ID。这是从签名 ``bar(bytes3[2])`` 派生的。
-- ``0x6162630000000000000000000000000000000000000000000000000000000000``：第一个参数的第一部分，一个 ``bytes3`` 值 ``"abc"``（左对齐）。
-- ``0x6465660000000000000000000000000000000000000000000000000000000000``：第一个参数的第二部分，一个 ``bytes3`` 值 ``"def"``（左对齐）。
+- ``0x6162630000000000000000000000000000000000000000000000000000000000``：第一个参数的第一部分，一个 ``bytes3`` 值 ``"abc"`` （左对齐）。
+- ``0x6465660000000000000000000000000000000000000000000000000000000000``：第一个参数的第二部分，一个 ``bytes3`` 值 ``"def"`` （左对齐）。
 
 总共：
 
@@ -374,11 +374,11 @@ Solidity 支持上述所有类型，名称相同，除了元组。
 
 然后我们编码第一个根数组的长度：
 
-- ``0x0000000000000000000000000000000000000000000000000000000000000002``（第一个根数组中的元素数量，2；元素本身是 ``[1, 2]`` 和 ``[3]``）
+- ``0x0000000000000000000000000000000000000000000000000000000000000002`` （第一个根数组中的元素数量，2；元素本身是 ``[1, 2]`` 和 ``[3]``）
 
 然后我们编码第二个根数组的长度：
 
-- ``0x0000000000000000000000000000000000000000000000000000000000000003``（第二个根数组中的字符串数量，3；字符串本身是 ``"one"``, ``"two"`` 和 ``"three"``）
+- ``0x0000000000000000000000000000000000000000000000000000000000000003`` （第二个根数组中的字符串数量，3；字符串本身是 ``"one"``, ``"two"`` 和 ``"three"``）
 
 最后，我们找到各自根动态数组 ``[[1, 2], [3]]`` 和 ``["one", "two", "three"]`` 的偏移量 ``f`` 和 ``g``，并按正确顺序组装部分：
 
@@ -424,8 +424,8 @@ Solidity 支持上述所有类型，名称相同，除了元组。
 实际上，使用此 ABI 的日志条目描述为：
 
 - ``address``：合约的地址（由以太坊内在提供）；
-- ``topics[0]``：``keccak(EVENT_NAME+"("+EVENT_ARGS.map(canonical_type_of).join(",")+")")``（``canonical_type_of`` 是一个简单返回给定参数的规范类型的函数，例如对于 ``uint indexed foo``，它将返回 ``uint256``）。如果事件未声明为 ``anonymous``，则此值仅存在于 ``topics[0]`` 中；
-- ``topics[n]``：如果事件未声明为 ``anonymous``，则为 ``abi_encode(EVENT_INDEXED_ARGS[n - 1])``，如果声明为 ``anonymous``，则为 ``abi_encode(EVENT_INDEXED_ARGS[n])``（``EVENT_INDEXED_ARGS`` 是一系列被索引的 ``EVENT_ARGS``）；
+- ``topics[0]``：``keccak(EVENT_NAME+"("+EVENT_ARGS.map(canonical_type_of).join(",")+")")`` （``canonical_type_of`` 是一个简单返回给定参数的规范类型的函数，例如对于 ``uint indexed foo``，它将返回 ``uint256``）。如果事件未声明为 ``anonymous``，则此值仅存在于 ``topics[0]`` 中；
+- ``topics[n]``：如果事件未声明为 ``anonymous``，则为 ``abi_encode(EVENT_INDEXED_ARGS[n - 1])``，如果声明为 ``anonymous``，则为 ``abi_encode(EVENT_INDEXED_ARGS[n])`` （``EVENT_INDEXED_ARGS`` 是一系列被索引的 ``EVENT_ARGS``）；
 - ``data``：``EVENT_NON_INDEXED_ARGS`` 的 ABI 编码（``EVENT_NON_INDEXED_ARGS`` 是一系列未被索引的 ``EVENT_ARGS``，``abi_encode`` 是用于从函数返回一系列类型化值的 ABI 编码函数，如上所述）。
 
 对于所有长度最多为 32 字节的类型，``EVENT_INDEXED_ARGS`` 数组直接包含值，填充或符号扩展（对于有符号整数）到 32 字节，就像常规 ABI 编码一样。
@@ -471,7 +471,7 @@ JSON
 合约接口的 JSON 格式由函数、事件和错误描述的数组给出。
 函数描述是一个具有以下字段的 JSON 对象：
 
-- ``type``: ``"function"``, ``"constructor"``, ``"receive"``（:ref:`"receive Ether" function <receive-ether-function>`）或 ``"fallback"``（:ref:`"default" function <fallback-function>`）；
+- ``type``: ``"function"``, ``"constructor"``, ``"receive"`` （:ref:`"receive Ether" function <receive-ether-function>`）或 ``"fallback"`` （:ref:`"default" function <fallback-function>`）；
 - ``name``: 函数的名称；
 - ``inputs``: 一个对象数组，每个对象包含：
 
@@ -480,7 +480,7 @@ JSON
   * ``components``: 用于元组类型（见下文）。
 
 - ``outputs``: 一个与 ``inputs`` 类似的对象数组。
-- ``stateMutability``: 一个字符串，值为以下之一：``pure``（:ref:`指定不读取区块链状态 <pure-functions>`），``view``（:ref:`指定不修改区块链状态 <view-functions>`），``nonpayable``（函数不接受以太 - 默认值）和 ``payable``（函数接受以太）。
+- ``stateMutability``: 一个字符串，值为以下之一：``pure`` （:ref:`指定不读取区块链状态 <pure-functions>`），``view`` （:ref:`指定不修改区块链状态 <view-functions>`），``nonpayable`` （函数不接受以太 - 默认值）和 ``payable`` （函数接受以太）。
 
 构造函数、接收和回退从不具有 ``name`` 或 ``outputs``。接收和回退也没有 ``inputs``。
 

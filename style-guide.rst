@@ -1064,9 +1064,9 @@ Python 的 `pep8 <https://peps.python.org/pep-0008/#a-foolish-consistency-is-the
 
 * ``b`` (单个小写字母)
 * ``B`` (单个大写字母)
-* ``lowercase``（小写）
-* ``UPPERCASE``（大写）
-* ``UPPER_CASE_WITH_UNDERSCORES``（大写和下划线）
+* ``lowercase`` （小写）
+* ``UPPERCASE`` （大写）
+* ``UPPER_CASE_WITH_UNDERSCORES`` （大写和下划线）
 * ``CapitalizedWords`` (驼峰式，首字母大写）
 * ``mixedCase`` (混合式，与驼峰式的区别在于首字母小写！)
 

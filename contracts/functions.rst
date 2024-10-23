@@ -246,7 +246,7 @@
 接收以太币函数
 ----------------------
 
-一个合约最多可以有一个 ``receive`` 函数，声明为 ``receive() external payable { ... }``（不带 ``function`` 关键字）。
+一个合约最多可以有一个 ``receive`` 函数，声明为 ``receive() external payable { ... }`` （不带 ``function`` 关键字）。
 该函数不能有参数，不能返回任何内容，必须具有``external`` 可见性和 ``payable`` 状态可变性。
 它可以是虚拟的，可以重写，并且可以有 |modifier|。
 

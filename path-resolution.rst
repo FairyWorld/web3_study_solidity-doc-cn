@@ -362,11 +362,11 @@ CLI 路径规范化和剥离
 
 当使用上述命令调用编译器时，主文件系统加载器将允许从以下目录导入文件：
 
-- ``/home/user/project/token/``（因为 ``token/`` 包含输入文件，并且它是基本路径），
-- ``/lib/``（因为 ``/lib/`` 是包含路径之一），
-- ``/home/user/project/libs/``（因为 ``libs/`` 是包含重映射目标的目录），
-- ``/home/user/utils/``（因为 ``../utils/`` 被传递给 ``--allow-paths``），
-- ``/tmp/libraries/``（因为 ``/tmp/libraries`` 被传递给 ``--allow-paths``），
+- ``/home/user/project/token/`` （因为 ``token/`` 包含输入文件，并且它是基本路径），
+- ``/lib/`` （因为 ``/lib/`` 是包含路径之一），
+- ``/home/user/project/libs/`` （因为 ``libs/`` 是包含重映射目标的目录），
+- ``/home/user/utils/`` （因为 ``../utils/`` 被传递给 ``--allow-paths``），
+- ``/tmp/libraries/`` （因为 ``/tmp/libraries`` 被传递给 ``--allow-paths``），
 
 .. note::
 

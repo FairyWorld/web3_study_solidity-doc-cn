@@ -151,7 +151,7 @@ Solidity 仓库的构建目标之一是 ``solc``，即 Solidity 命令行编译�
 - ``london``
    - 块的基础费用（`EIP-3198 <https://eips.ethereum.org/EIPS/eip-3198>`_ 和 `EIP-1559 <https://eips.ethereum.org/EIPS/eip-1559>`_）可以通过全局 ``block.basefee`` 或 ``basefee()`` 在内联汇编中访问。
 - ``paris``
-   - 引入 ``prevrandao()`` 和 ``block.prevrandao``，并更改了现已弃用的 ``block.difficulty`` 的语义，禁止在内联汇编中使用 ``difficulty()``（见 `EIP-4399 <https://eips.ethereum.org/EIPS/eip-4399>`_）。
+   - 引入 ``prevrandao()`` 和 ``block.prevrandao``，并更改了现已弃用的 ``block.difficulty`` 的语义，禁止在内联汇编中使用 ``difficulty()`` （见 `EIP-4399 <https://eips.ethereum.org/EIPS/eip-4399>`_）。
 - ``shanghai``
    - 由于引入了 ``push0``，代码大小和 gas 节省更小（见 `EIP-3855 <https://eips.ethereum.org/EIPS/eip-3855>`_）。
 - ``cancun`` (**默认**)

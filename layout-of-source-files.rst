@@ -24,7 +24,7 @@ SPDX 许可证标识符
 但它会将提供的字符串包含在 :ref:`字节码元数据 <metadata>` 中。
 
 如果你不想指定许可证，或者源代码不是开源的，请使用特殊值 ``UNLICENSED``。
-请注意，``UNLICENSED``（不允许使用，不在 SPDX 许可证列表中）与 ``UNLICENSE``（授予所有人所有权利）是不同的。
+请注意，``UNLICENSED`` （不允许使用，不在 SPDX 许可证列表中）与 ``UNLICENSE`` （授予所有人所有权利）是不同的。
 Solidity 遵循 `npm 的建议 <https://docs.npmjs.com/cli/v7/configuring-npm/package-json#license>`_。
 
 提供此注释当然并不免除你与许可证相关的其他义务，例如在每个源文件中提及特定的许可证头或原始版权持有者。

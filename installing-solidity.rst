@@ -212,7 +212,7 @@ macOS 包
 
    由于强大的向后兼容性要求，仓库中包含一些遗留元素，但在编写新工具时应避免使用它们：
 
-   - 如果想要最佳性能，请使用 ``emscripten-wasm32/``（并回退到 ``emscripten-asmjs/``）。在 0.6.1 版本之前，我们只提供 asm.js 二进制文件。从 0.6.2 开始，我们切换到 `WebAssembly builds`_，性能大大提高。我们已经为 wasm 重新构建了旧版本，但原始的 asm.js 文件仍保留在 ``bin/`` 中。新的文件必须放在单独的目录中以避免名称冲突。
+   - 如果想要最佳性能，请使用 ``emscripten-wasm32/`` （并回退到 ``emscripten-asmjs/``）。在 0.6.1 版本之前，我们只提供 asm.js 二进制文件。从 0.6.2 开始，我们切换到 `WebAssembly builds`_，性能大大提高。我们已经为 wasm 重新构建了旧版本，但原始的 asm.js 文件仍保留在 ``bin/`` 中。新的文件必须放在单独的目录中以避免名称冲突。
    - 如果想确保下载的是 wasm 还是 asm.js 二进制文件，请使用 ``emscripten-asmjs/`` 和 ``emscripten-wasm32/``，而不是 ``bin/`` 和 ``wasm/`` 目录。
    - 使用 ``list.json`` 而不是 ``list.js`` 和 ``list.txt``。JSON 列表格式包含所有旧格式的信息以及更多信息。
    - 使用 https://binaries.soliditylang.org 而不是 https://solc-bin.ethereum.org。为了简化，我们将几乎所有与编译器相关的内容移到了新的 ``soliditylang.org`` 域名下，这也适用于 ``solc-bin``。虽然推荐使用新域名，但旧域名仍然完全支持，并保证指向相同的位置。

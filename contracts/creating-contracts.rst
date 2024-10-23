@@ -12,7 +12,7 @@ IDE，如 `Remix <https://remix.ethereum.org/>`_，通过 UI 元素使创建过�
 它有一个名为 `web3.eth.Contract <https://web3js.readthedocs.io/en/1.0/web3-eth-contract.html#new-contract>`_
 的函数来促进合约的创建。
 
-当合约被创建时，它的 :ref:`constructor <constructor>`（用 ``constructor`` 关键字声明的函数）会被执行一次。
+当合约被创建时，它的 :ref:`constructor <constructor>` （用 ``constructor`` 关键字声明的函数）会被执行一次。
 
 构造函数是可选的。只允许存在一个构造函数，这意味着不支持重载。
 
