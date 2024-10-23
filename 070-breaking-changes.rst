@@ -1,133 +1,109 @@
 ********************************
-Solidity v0.7.0 重大更新
+Solidity v0.7.0 重大变更
 ********************************
 
-This section highlights the main breaking changes introduced in Solidity
-version 0.7.0, along with the reasoning behind the changes and how to update
-affected code.
-For the full list check
-`the release changelog <https://github.com/ethereum/solidity/releases/tag/v0.7.0>`_.
+本节重点介绍了 Solidity 版本 0.7.0 中引入的主要重大变更，以及变更背后的原因和如何变更日志受影响的代码。
+完整列表请查看 `变更日志 <https://github.com/ethereum/solidity/releases/tag/v0.7.0>`_.
 
 
-Silent Changes of the Semantics
+语义的静默变化
 ===============================
 
-* Exponentiation and shifts of literals by non-literals (e.g. ``1 << x`` or ``2 ** x``)
-  will always use either the type ``uint256`` (for non-negative literals) or
-  ``int256`` (for negative literals) to perform the operation.
-  Previously, the operation was performed in the type of the shift amount / the
-  exponent which can be misleading.
+* 通过非字面量对字面量进行指数运算和位移（例如 ``1 << x`` 或 ``2 ** x``）将始终使用类型 ``uint256``（对于非负字面量）或 ``int256``（对于负字面量）来执行操作。
+  之前，操作是在移位量/指数的类型中执行的，这可能会导致误解。
 
 
-Changes to the Syntax
+语法的变化
 =====================
 
-* In external function and contract creation calls, Ether and gas is now specified using a new syntax:
-  ``x.f{gas: 10000, value: 2 ether}(arg1, arg2)``.
-  The old syntax -- ``x.f.gas(10000).value(2 ether)(arg1, arg2)`` -- will cause an error.
+* 在外部函数和合约创建调用中，Ether 和 gas 现在使用新语法指定：``x.f{gas: 10000, value: 2 ether}(arg1, arg2)``。
+  旧语法 -- ``x.f.gas(10000).value(2 ether)(arg1, arg2)`` -- 将导致错误。
 
-* The global variable ``now`` is deprecated, ``block.timestamp`` should be used instead.
-  The single identifier ``now`` is too generic for a global variable and could give the impression
-  that it changes during transaction processing, whereas ``block.timestamp`` correctly
-  reflects the fact that it is just a property of the block.
+* 全局变量 ``now`` 已被弃用，应该使用 ``block.timestamp``。
+  单一标识符 ``now`` 对于全局变量来说过于通用，可能会给人一种在交易处理过程中会变化的印象，而 ``block.timestamp`` 正确地反映了它只是区块的一个属性。
 
-* NatSpec comments on variables are only allowed for public state variables and not
-  for local or internal variables.
+* NatSpec 注释仅允许用于公共状态变量，而不适用于本地或内部变量。
 
-* The token ``gwei`` is a keyword now (used to specify, e.g. ``2 gwei`` as a number)
-  and cannot be used as an identifier.
+* 令牌 ``gwei`` 现在是一个关键字（用于指定，例如 ``2 gwei`` 作为一个数字）并且不能用作标识符。
 
-* String literals now can only contain printable ASCII characters and this also includes a variety of
-  escape sequences, such as hexadecimal (``\xff``) and unicode escapes (``\u20ac``).
+* 字符串字面量现在只能包含可打印的 ASCII 字符，这也包括多种转义序列，例如十六进制（``\xff``）和 Unicode 转义（``\u20ac``）。
 
-* Unicode string literals are supported now to accommodate valid UTF-8 sequences. They are identified
-  with the ``unicode`` prefix: ``unicode"Hello 😃"``.
+* 现在支持 Unicode 字符串字面量，以适应有效的 UTF-8 序列。它们以 ``unicode`` 前缀标识：``unicode"Hello 😃"``.
 
-* State Mutability: The state mutability of functions can now be restricted during inheritance:
-  Functions with default state mutability can be overridden by ``pure`` and ``view`` functions
-  while ``view`` functions can be overridden by ``pure`` functions.
-  At the same time, public state variables are considered ``view`` and even ``pure``
-  if they are constants.
+* 状态可变性：函数的状态可变性现在可以在继承期间受到限制：
+  默认状态可变性的函数可以被 ``pure`` 和 ``view`` 函数重写，而 ``view`` 函数可以被 ``pure`` 函数重写。
+  同时，公共状态变量被视为 ``view``，如果它们是常量，则甚至是 ``pure``。
 
 
 
-Inline Assembly
+内联汇编
 ---------------
 
-* Disallow ``.`` in user-defined function and variable names in inline assembly.
-  It is still valid if you use Solidity in Yul-only mode.
+* 不允许在内联汇编中使用用户定义的函数和变量名称中的 ``.``。
+  如果你在仅 Yul 模式下使用 Solidity，则仍然有效。
 
-* Slot and offset of storage pointer variable ``x`` are accessed via ``x.slot``
-  and ``x.offset`` instead of ``x_slot`` and ``x_offset``.
+* 存储指针变量 ``x`` 的槽和偏移量通过 ``x.slot`` 和 ``x.offset`` 访问，而不是 ``x_slot`` 和 ``x_offset``。
 
-Removal of Unused or Unsafe Features
+移除未使用或不安全的特性
 ====================================
 
-Mappings outside Storage
+存储外的映射
 ------------------------
 
-* If a struct or array contains a mapping, it can only be used in storage.
-  Previously, mapping members were silently skipped in memory, which
-  is confusing and error-prone.
+* 如果结构或数组包含映射，则只能在存储中使用。
+  之前，映射成员在内存中被静默跳过，这令人困惑且容易出错。
 
-* Assignments to structs or arrays in storage does not work if they contain
-  mappings.
-  Previously, mappings were silently skipped during the copy operation, which
-  is misleading and error-prone.
+* 如果存储中的结构或数组包含映射，则赋值无效。
+  之前，映射在复制操作中被静默跳过，这令人误解且容易出错。
 
-Functions and Events
+函数和事件
 --------------------
 
-* Visibility (``public`` / ``internal``) is not needed for constructors anymore:
-  To prevent a contract from being created, it can be marked ``abstract``.
-  This makes the visibility concept for constructors obsolete.
+* 构造函数不再需要可见性（``public`` / ``internal``）：为了防止合约被创建，可以将其标记为 ``abstract``。
+  这使得构造函数的可见性概念变得过时。
 
-* Type Checker: Disallow ``virtual`` for library functions:
-  Since libraries cannot be inherited from, library functions should not be virtual.
+* 类型检查器：不允许库函数使用 ``virtual``：
+  由于库不能被继承，库函数不应为虚拟的。
 
-* Multiple events with the same name and parameter types in the same
-  inheritance hierarchy are disallowed.
+* 不允许在同一继承层次结构中有多个同名且参数类型相同的事件。
 
-* ``using A for B`` only affects the contract it is mentioned in.
-  Previously, the effect was inherited. Now, you have to repeat the ``using``
-  statement in all derived contracts that make use of the feature.
+* ``using A for B`` 仅影响提到的合约。
+  之前，效果是继承的。现在，你必须在所有使用该特性的派生合约中重复 ``using`` 语句。
 
-Expressions
+表达式
 -----------
 
-* Shifts by signed types are disallowed.
-  Previously, shifts by negative amounts were allowed, but reverted at runtime.
+* 不允许对有符号类型进行位移。
+  之前，允许对负数进行位移，但在运行时会回退。
 
-* The ``finney`` and ``szabo`` denominations are removed.
-  They are rarely used and do not make the actual amount readily visible. Instead, explicit
-  values like ``1e20`` or the very common ``gwei`` can be used.
+* 移除了 ``finney`` 和 ``szabo`` 面额。
+  它们很少使用，并且无法清晰地显示实际金额。相反，可以使用显式值，如 ``1e20`` 或非常常见的 ``gwei``。
 
-Declarations
+声明
 ------------
 
-* The keyword ``var`` cannot be used anymore.
-  Previously, this keyword would parse but result in a type error and
-  a suggestion about which type to use. Now, it results in a parser error.
+* 关键字 ``var`` 不再可用。
+  之前，这个关键字会解析但导致类型错误，并提供关于使用哪种类型的建议。现在，它会导致解析器错误。
 
-Interface Changes
+接口变化
 =================
 
-* JSON AST: Mark hex string literals with ``kind: "hexString"``.
-* JSON AST: Members with value ``null`` are removed from JSON output.
-* NatSpec: Constructors and functions have consistent userdoc output.
+* JSON AST：用 ``kind: "hexString"`` 标记十六进制字符串字面量。
+* JSON AST：值为 ``null`` 的成员从 JSON 输出中移除。
+* NatSpec：构造函数和函数具有一致的用户文档输出。
 
 
-How to update your code
+如何变更日志你的代码
 =======================
 
-This section gives detailed instructions on how to update prior code for every breaking change.
+本节提供了有关如何变更日志先前代码以应对每个重大变更的详细说明。
 
-* Change ``x.f.value(...)()`` to ``x.f{value: ...}()``. Similarly ``(new C).value(...)()`` to
-  ``new C{value: ...}()`` and ``x.f.gas(...).value(...)()`` to ``x.f{gas: ..., value: ...}()``.
-* Change ``now`` to ``block.timestamp``.
-* Change types of right operand in shift operators to unsigned types. For example change ``x >> (256 - y)`` to
-  ``x >> uint(256 - y)``.
-* Repeat the ``using A for B`` statements in all derived contracts if needed.
-* Remove the ``public`` keyword from every constructor.
-* Remove the ``internal`` keyword from every constructor and add ``abstract`` to the contract (if not already present).
-* Change ``_slot`` and ``_offset`` suffixes in inline assembly to ``.slot`` and ``.offset``, respectively.
+* 将 ``x.f.value(...)()`` 更改为 ``x.f{value: ...}()``。类似地，将 ``(new C).value(...)()`` 更改为
+  ``new C{value: ...}()``，将 ``x.f.gas(...).value(...)()`` 更改为 ``x.f{gas: ..., value: ...}()``。
+* 将 ``now`` 更改为 ``block.timestamp``。
+* 将移位运算符右操作数的类型更改为无符号类型。例如，将 ``x >> (256 - y)`` 更改为
+  ``x >> uint(256 - y)``。
+* 如有需要，在所有派生合约中重复 ``using A for B`` 语句。
+* 从每个构造函数中移除 ``public`` 关键字。
+* 从每个构造函数中移除 ``internal`` 关键字，并将 ``abstract`` 添加到合约中（如果尚未存在）。
+* 将内联汇编中的 ``_slot`` 和 ``_offset`` 后缀更改为 ``.slot`` 和 ``.offset``。
