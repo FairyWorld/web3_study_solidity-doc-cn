@@ -225,7 +225,7 @@ Bob 保证会收到他的资金，因为智能合约托管了以太币并尊重�
 ----------------
 
 要打开支付通道，Alice 需要部署智能合约，附上要托管的以太币，并指定预期的接收者和通道存在的最大持续时间。
-这是合约中的``SimplePaymentChannel``函数，在本节末尾。
+这是合约中的 ``SimplePaymentChannel`` 函数，在本节末尾。
 
 进行支付
 -----------
@@ -280,7 +280,7 @@ Alice 通过 Bob 发送签名消息来进行付款。该步骤完全在以太坊
 要关闭通道，Bob 需要提供一条由 Alice 签署的消息。
 
 智能合约必须验证消息是否包含来自发送者的有效签名。进行此验证的过程与接收者使用的过程相同。
-Solidity 函数 ``isValidSignature`` 和 ``recoverSigner`` 的工作方式与上一节中的 JavaScript 对应函数相同，后者函数借用自``ReceiverPays``合约。
+Solidity 函数 ``isValidSignature`` 和 ``recoverSigner`` 的工作方式与上一节中的 JavaScript 对应函数相同，后者函数借用自 ``ReceiverPays`` 合约。
 
 只有支付通道的接收者可以调用 ``close`` 函数，接收者自然会传递最新的付款消息，因为该消息携带最高的付款总额。
 如果允许发送者调用此函数，他们可能会提供一条金额较低的消息，从而欺骗接收者，剥夺他们应得的款项。
@@ -293,7 +293,7 @@ Solidity 函数 ``isValidSignature`` 和 ``recoverSigner`` 的工作方式与上
 
 Bob 可以随时关闭支付通道，但如果他没有这样做，Alice 需要一种方法来恢复她托管的资金。
 在合约部署时设置了一个 *过期* 时间。一旦达到该时间，Alice 可以调用 ``claimTimeout`` 来恢复她的资金。
-可以在完整合约中查看``claimTimeout``函数。
+可以在完整合约中查看 ``claimTimeout`` 函数。
 
 在调用此函数后，Bob 将无法再接收任何以太币，因此在到期之前，Bob 关闭通道是很重要的。
 

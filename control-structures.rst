@@ -524,7 +524,7 @@ Assert 应仅用于测试内部错误，并检查不变式。正常工作的代�
 在以下情况下，外部调用的错误数据（如果提供）会被转发。这意味着它可以导致 ``Error`` 或 ``Panic`` （或其他任何给定的内容）：
 
 #. 如果 ``.transfer()`` 失败。
-#. 如果你通过消息调用调用一个函数，但它没有正确完成（即，它耗尽了 gas、没有匹配的函数或自身抛出异常），除非使用低级操作``call``、``send``、``delegatecall``、``callcode`` 或 ``staticcall``。
+#. 如果你通过消息调用调用一个函数，但它没有正确完成（即，它耗尽了 gas、没有匹配的函数或自身抛出异常），除非使用低级操作 ``call``、``send``、``delegatecall``、``callcode`` 或 ``staticcall``。
    低级操作从不抛出异常，而是通过返回 ``false`` 指示失败。
 #. 如果你使用 ``new`` 关键字创建一个合约，但合约创建 :ref:`没有正确结束<creating-contracts>`。
 
@@ -582,7 +582,7 @@ Assert 应仅用于测试内部错误，并检查不变式。正常工作的代�
     revert("描述");
 
 错误数据将被传回给调用者，并可以在那里捕获。
-使用 ``revert()`` 会导致没有任何错误数据的回退，而 ``revert("描述")``将创建一个 ``Error(string)`` 错误。
+使用 ``revert()`` 会导致没有任何错误数据的回退，而 ``revert("描述")`` 将创建一个 ``Error(string)`` 错误。
 
 使用自定义错误实例通常比字符串描述便宜得多，因为你可以使用错误的名称来描述它，这仅编码为四个字节。
 可以通过 NatSpec 提供更长的描述，而不会产生任何费用。
@@ -682,7 +682,7 @@ Assert 应仅用于测试内部错误，并检查不变式。正常工作的代�
 
 Solidity 支持不同类型的 catch 块，具体取决于错误类型：
 
-- ``catch Error(string memory reason) { ... }``：如果错误是由 ``revert("reasonString")`` 或``require(false, "reasonString")`` （或导致此类异常的内部错误）引起的，则执行此捕获子句。
+- ``catch Error(string memory reason) { ... }``：如果错误是由 ``revert("reasonString")`` 或 ``require(false, "reasonString")`` （或导致此类异常的内部错误）引起的，则执行此捕获子句。
 
 - ``catch Panic(uint errorCode) { ... }``：如果错误是由 panic 引起的，即由失败的 ``assert``、除以零、无效数组访问、算术溢出等引起的，则将运行此捕获子句。
 

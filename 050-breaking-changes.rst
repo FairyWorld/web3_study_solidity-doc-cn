@@ -70,7 +70,7 @@ Solidity v0.5.0 重大变更
   ``address payable`` 可以直接转换为 ``address``，但反向转换是不允许的。
   通过 ``uint160`` 转换 ``address`` 为 ``address payable`` 是可能的。
   如果 ``c`` 是一个合约，``address(c)`` 仅在 ``c`` 具有可支付的回退函数时才会产生 ``address payable``。
-  如果你使用 :ref:`提取模式<withdrawal_pattern>`，你很可能不需要更改代码，因为 ``transfer``仅在 ``msg.sender`` 上使用，而不是存储的地址，并且 ``msg.sender`` 是一个 ``address payable``。
+  如果你使用 :ref:`提取模式<withdrawal_pattern>`，你很可能不需要更改代码，因为 ``transfer`` 仅在 ``msg.sender`` 上使用，而不是存储的地址，并且 ``msg.sender`` 是一个 ``address payable``。
 
 * 由于 ``bytesX`` 在右侧填充和 ``uintY`` 在左侧填充可能导致意外的转换结果，因此不同大小的 ``bytesX`` 和 ``uintY`` 之间的转换现在不被允许。
   现在必须在转换之前在类型内调整大小。例如，你可以将 ``bytes4`` （4 字节）转换为 ``uint64`` （8 字节），方法是先将 ``bytes4`` 变量转换为 ``bytes8``，然后再转换为 ``uint64``。
@@ -84,29 +84,29 @@ Solidity v0.5.0 重大变更
 弃用元素
 ===================
 
-本节列出了使先前功能或语法过时的更改。请注意，许多这些更改在实验模式``v0.5.0``中已经启用。
+本节列出了使先前功能或语法过时的更改。请注意，许多这些更改在实验模式 ``v0.5.0`` 中已经启用。
 
 命令行和 JSON 接口
 --------------------------------
 
-* 命令行选项``--formal`` （用于生成进一步形式验证的 Why3 输出）已被弃用并且现在已被移除。一个新的形式验证模块 SMTChecker 通过``pragma experimental SMTChecker;``启用。
+* 命令行选项 ``--formal`` （用于生成进一步形式验证的 Why3 输出）已被弃用并且现在已被移除。一个新的形式验证模块 SMTChecker 通过 ``pragma experimental SMTChecker;`` 启用。
 
-* 命令行选项``--julia``因中间语言``Julia``重命名为``Yul``而被重命名为``--yul``。
+* 命令行选项 ``--julia`` 因中间语言 ``Julia`` 重命名为 ``Yul`` 而被重命名为 ``--yul``。
 
-* ``--clone-bin``和``--combined-json clone-bin``命令行选项已被移除。
+* ``--clone-bin`` 和 ``--combined-json clone-bin`` 命令行选项已被移除。
 
 * 不允许使用空前缀的重映射。
 
-* JSON AST 字段``constant``和``payable``已被移除。该信息现在在``stateMutability``字段中。
+* JSON AST 字段 ``constant`` 和 ``payable`` 已被移除。该信息现在在 ``stateMutability`` 字段中。
 
-* JSON AST 字段``isConstructor``的``FunctionDefinition``节点已被名为``kind``的字段替代，该字段可以具有值``"constructor"``, ``"fallback"``或``"function"``。
+* JSON AST 字段 ``isConstructor`` 的 ``FunctionDefinition`` 节点已被名为 ``kind`` 的字段替代，该字段可以具有值 ``"constructor"``, ``"fallback"`` 或 ``"function"``。
 
-* 在未链接的二进制十六进制文件中，库地址占位符现在是完全限定库名称的 keccak256 哈希的前 36 个十六进制字符，周围用``$...$``包围。之前，仅使用完全限定的库名称。这减少了碰撞的可能性，特别是在使用长路径时。二进制文件现在还包含从这些占位符到完全限定名称的映射列表。
+* 在未链接的二进制十六进制文件中，库地址占位符现在是完全限定库名称的 keccak256 哈希的前 36 个十六进制字符，周围用 ``$...$`` 包围。之前，仅使用完全限定的库名称。这减少了碰撞的可能性，特别是在使用长路径时。二进制文件现在还包含从这些占位符到完全限定名称的映射列表。
 
 构造函数
 ------------
 
-* 现在必须使用``constructor``关键字定义构造函数。
+* 现在必须使用 ``constructor`` 关键字定义构造函数。
 
 * 不再允许在没有括号的情况下调用基构造函数。
 
@@ -117,38 +117,38 @@ Solidity v0.5.0 重大变更
 函数
 ---------
 
-* 函数``callcode``现在不被允许（支持``delegatecall``）。仍然可以通过内联汇编使用它。
+* 函数 ``callcode`` 现在不被允许（支持 ``delegatecall``）。仍然可以通过内联汇编使用它。
 
-* ``suicide``现在不被允许（支持``selfdestruct``）。
+* ``suicide`` 现在不被允许（支持 ``selfdestruct``）。
 
-* ``sha3``现在不被允许（支持``keccak256``）。
+* ``sha3`` 现在不被允许（支持 ``keccak256``）。
 
-* ``throw``现在不被允许（支持``revert``、``require``和``assert``）。
+* ``throw`` 现在不被允许（支持 ``revert``、``require`` 和 ``assert``）。
 
 转换
 -----------
 
-* 从十进制字面量到``bytesXX``类型的显式和隐式转换现在不被允许。
+* 从十进制字面量到 ``bytesXX`` 类型的显式和隐式转换现在不被允许。
 
-* 从十六进制字面量到不同大小的``bytesXX``类型的显式和隐式转换现在不被允许。
+* 从十六进制字面量到不同大小的 ``bytesXX`` 类型的显式和隐式转换现在不被允许。
 
 字面量和后缀
 ---------------------
 
-* 由于对闰年的复杂性和混淆，单位名称``years``现在不被允许。
+* 由于对闰年的复杂性和混淆，单位名称 ``years`` 现在不被允许。
 
 * 不再允许后面没有数字的尾随点。
 
-* 现在不允许将十六进制数字与单位名称结合（例如``0x1e wei``）。
+* 现在不允许将十六进制数字与单位名称结合（例如 ``0x1e wei``）。
 
-* 十六进制数字的前缀``0X``不被允许，仅允许``0x``。
+* 十六进制数字的前缀 ``0X`` 不被允许，仅允许 ``0x``。
 
 变量
 ---------
 
 * 现在不允许声明空结构以提高清晰度。
 
-* 现在不允许使用``var``关键字以支持显式性。
+* 现在不允许使用 ``var`` 关键字以支持显式性。
 
 * 不同组件数量的元组之间的赋值现在不被允许。
 
@@ -167,17 +167,17 @@ Solidity v0.5.0 重大变更
 语法
 ------
 
-* 现在不允许将``constant``用作函数状态可变性修改器。
+* 现在不允许将 ``constant`` 用作函数状态可变性修改器。
 
 * 布尔表达式不能使用算术运算。
 
-* 一元``+``运算符现在不被允许。
+* 一元 ``+`` 运算符现在不被允许。
 
-* 字面量不能再与``abi.encodePacked``一起使用，而不先转换为显式类型。
+* 字面量不能再与 ``abi.encodePacked`` 一起使用，而不先转换为显式类型。
 
 * 对于一个或多个返回值的函数，空返回语句现在不被允许。
 
-* “松散汇编”语法现在完全不被允许，即不再允许使用跳转标签、跳转和非功能指令。请改用新的``while``、``switch``和``if``构造。
+* “松散汇编”语法现在完全不被允许，即不再允许使用跳转标签、跳转和非功能指令。请改用新的 ``while``、``switch`` 和 ``if`` 构造。
 
 * 没有实现的函数不能再使用修改器。
 
@@ -185,9 +185,9 @@ Solidity v0.5.0 重大变更
 
 * 在 if/while/for 体内的单语句变量声明（不是块）现在不被允许。
 
-* 新关键字：``calldata``和``constructor``。
+* 新关键字：``calldata`` 和 ``constructor``。
 
-* 新保留关键字：``alias``、``apply``、``auto``、``copyof``、``define``、``immutable``、``implements``、``macro``、``mutable``、``override``、``partial``、``promise``、``reference``、``sealed``、``sizeof``、``supports``、``typedef``和``unchecked``。
+* 新保留关键字：``alias``、``apply``、``auto``、``copyof``、``define``、``immutable``、``implements``、``macro``、``mutable``、``override``、``partial``、``promise``、``reference``、``sealed``、``sizeof``、``supports``、``typedef`` 和 ``unchecked``。
 
 .. _interoperability:
 
@@ -223,7 +223,7 @@ Solidity v0.5.0 重大变更
         function anotherOldFunction() external returns (bool);
     }
 
-请注意，我们没有将 ``anotherOldFunction`` 声明为 ``view``，尽管它在原始合约中被声明为``constant``。
+请注意，我们没有将 ``anotherOldFunction`` 声明为 ``view``，尽管它在原始合约中被声明为 ``constant``。
 这是因为从 Solidity v0.5.0 开始，使用 ``staticcall`` 来调用 ``view` 函数。
 在 v0.5.0 之前，``constant`` 关键字并未强制执行，因此使用 ``staticcall`` 调用声明为 ``constant`` 的函数仍可能回退，因为 ``constant`` 函数仍可能尝试修改存储。
 因此，在为旧合约定义接口时，你应该仅在绝对确定该函数可以与 ``staticcall`` 一起使用的情况下，使用 ``view`` 替代 ``constant``。

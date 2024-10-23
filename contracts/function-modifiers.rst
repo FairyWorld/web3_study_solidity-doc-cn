@@ -95,7 +95,7 @@
 返回变量被赋值，控制流在前面的 |modifier| 中的 ``_`` 之后继续。
 
 .. warning::
-    在早期版本的 Solidity 中，具有 |modifier| 的函数中的``return`` 语句的行为不同。
+    在早期版本的 Solidity 中，具有 |modifier| 的函数中的 ``return`` 语句的行为不同。
 
 从 |modifier| 显式返回 ``return;`` 不会影响函数返回值。
 但是，|modifier| 可以选择完全不执行函数主体，在这种情况下，返回变量被设置为 :ref:`默认值<default-value>`，就像函数有一个空主体一样。

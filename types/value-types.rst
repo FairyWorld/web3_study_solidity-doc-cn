@@ -183,7 +183,7 @@
 类型转换：
 
 允许从 ``address payable`` 到 ``address`` 的隐式转换，
-而从 ``address`` 到 ``address payable``的转换必须通过 ``payable(<address>)`` 显式进行。
+而从 ``address`` 到 ``address payable`` 的转换必须通过 ``payable(<address>)`` 显式进行。
 
 对于 ``uint160``、整数字面量、``bytes20`` 和合约类型，允许显式转换为 ``address``。
 
@@ -192,7 +192,7 @@
 请注意 ``payable(0)`` 是有效的，并且是此规则的例外。
 
 .. note::
-    如果你需要``address`` 类型的变量并计划向其发送以太币，那么将其类型声明为 ``address payable`` 可以明确表达出你的需求。
+    如果你需要 ``address`` 类型的变量并计划向其发送以太币，那么将其类型声明为 ``address payable`` 可以明确表达出你的需求。
     此外，尽量尽早进行这种区分或转换。
 
     ``address`` 和 ``address payable`` 之间的区分是在 0.5.0 版本中引入的。
