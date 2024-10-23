@@ -1,6 +1,6 @@
 .. include:: glossaries.rst
 
-.. index:: ! 继承, ! 基类, ! 合约;基, ! 派生
+.. index:: ! inheritance, ! base class, ! contract;base, ! deriving
 
 ***********
 继承
