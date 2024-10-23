@@ -8,7 +8,7 @@
 * `Ethereum.org 开发者门户 <https://ethereum.org/en/developers/>`_
 * `Ethereum 问答 <https://ethereum.stackexchange.com/>`_
 * `Solidity 门户 <https://soliditylang.org/>`_
-* `Solidity 更新日志 <https://github.com/ethereum/solidity/blob/develop/Changelog.md>`_
+* `Solidity 变更日志 <https://github.com/ethereum/solidity/blob/develop/Changelog.md>`_
 * `Solidity GitHub 源码 <https://github.com/ethereum/solidity/>`_
 * `Solidity 语言用户频道 <https://matrix.to/#/#ethereum_solidity:gitter.im>`_
 * `Solidity 编译器开发者频道 <https://matrix.to/#/#ethereum_solidity-dev:gitter.im>`_
