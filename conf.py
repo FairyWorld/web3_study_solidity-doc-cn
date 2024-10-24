@@ -348,3 +348,33 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+# copy from : https://stackoverflow.com/questions/49331914/enable-versions-in-sidebar-in-sphinx-read-the-docs-theme
+############################
+# SETUP THE RTD LOWER-LEFT #
+############################
+try:
+  html_context
+except NameError:
+  html_context = dict()
+html_context['display_lower_left'] = True
+
+templates_path = ['_templates']
+
+
+# tell the theme which language to we're currently building
+html_context['current_language'] = language
+
+html_context['current_version'] = version
+html_context['version'] = version
+
+
+html_context['versions'] = list()
+
+
+import json
+
+with open('versions.json') as json_file:
+    data = json.load(json_file)
+    for v in data:
+      html_context['versions'].append( (v['version'], v['url']) )
