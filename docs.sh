@@ -35,4 +35,4 @@ cd "${script_dir}"
 # TODO since Debian has decided to not use the RECORD file, which then breaks pip.
 # TODO https://github.com/pypa/pip/issues/11631 and https://bugs.launchpad.net/ubuntu/+source/wheel/+bug/2063151
 pip3 install -r requirements.txt --ignore-installed --upgrade --upgrade-strategy eager
-sphinx-build -nW -b html -d _build/doctrees . _build/html
+sphinx-build -n -b html -d _build/doctrees . _build/html
