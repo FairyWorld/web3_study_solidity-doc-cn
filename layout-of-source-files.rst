@@ -38,7 +38,7 @@ Solidity 遵循 `npm 的建议 <https://docs.npmjs.com/cli/v7/configuring-npm/pa
 .. _pragma:
 
 编译指令
-=======
+================
 
 ``pragma`` 关键字用于启用某些编译器特性或检查。|pragma| 通常只对本文件有效，因此如果你希望在整个项目中启用它，必须将其添加到所有文件中。
 如果你 :ref:`导入<import>` 另一个文件，该文件的编译指令不会自动应用于导入文件。
@@ -70,7 +70,7 @@ Solidity 遵循 `npm 的建议 <https://docs.npmjs.com/cli/v7/configuring-npm/pa
 .. _abi_coder:
 
 ABI 编码器编译指令
-----------------
+--------------------------------
 
 通过使用 ``pragma abicoder v1`` 或 ``pragma abicoder v2``，可以在 ABI 编码器和解码器的两个实现之间进行选择。
 
@@ -125,6 +125,7 @@ SMTChecker
 .. index:: source file, ! import, module, source unit
 
 .. _import:
+
 导入其他源文件
 ============================
 

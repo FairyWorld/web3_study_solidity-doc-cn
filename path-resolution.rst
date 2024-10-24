@@ -408,6 +408,7 @@ CLI 路径规范化和剥离
 - ``context`` 必须匹配包含导入的文件的源单元名称的开头。
 - ``prefix`` 必须匹配导入所产生的源单元名称的开头。
 - ``target`` 是前缀被替换的值。
+
 例如，如果你将 https://github.com/ethereum/dapp-bin/ 克隆到本地的 ``/project/dapp-bin`` 并使用以下命令运行编译器：
 
 .. code-block:: bash
