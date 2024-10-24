@@ -2,7 +2,7 @@
 const SITE_URL = "https://learnblockchain.cn"
 const { origin, pathname } = location;
 const pathSplit = pathname.split("/");
-const rootPath = origin.includes(SITE_URL) ? pathSplit.slice(1,4).join('/') : '';
+const rootPath = origin.includes(SITE_URL) ? pathSplit.slice(1,3).join('/') : '';
 const ROOT_URL = `${origin}/${rootPath}`;
 
 // Color mode constants
