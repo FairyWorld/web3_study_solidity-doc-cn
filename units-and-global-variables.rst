@@ -267,7 +267,7 @@ ABI 编码和解码函数
     或引发异常。
 
     低级调用操作在地址而不是合约实例上操作（即 ``.call()``,
-    ``.delegatecall()``, ``.staticcall()``, ``.send()`` 和 ``.transfer()``）**不**包括此检查，这使它们在 gas 方面更便宜，但也不那么安全。
+    ``.delegatecall()``, ``.staticcall()``, ``.send()`` 和 ``.transfer()``）**不** 包括此检查，这使它们在 gas 方面更便宜，但也不那么安全。
 .. note::
    在版本 0.5.0 之前，Solidity 允许通过合约实例访问地址成员，例如 ``this.balance``。
    现在这是被禁止的，必须显式转换为地址：``address(this).balance``。
