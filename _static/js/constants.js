@@ -1,8 +1,8 @@
 // Site URL
-const SITE_URL = "https://docs.soliditylang.org"
+const SITE_URL = "https://learnblockchain.cn"
 const { origin, pathname } = location;
 const pathSplit = pathname.split("/");
-const rootPath = origin.includes(SITE_URL) && pathSplit.length > 3 ? pathSplit.splice(1, 2).join("/") : ''
+const rootPath = origin.includes(SITE_URL) ? pathSplit.slice(1,4).join('/') : '';
 const ROOT_URL = `${origin}/${rootPath}`;
 
 // Color mode constants
