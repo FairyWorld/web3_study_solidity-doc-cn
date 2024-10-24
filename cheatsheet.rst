@@ -104,6 +104,7 @@ ABI 编码和解码函数
 - ``this`` (当前合约的类型): 当前合约，显式可转换为 ``address`` 或 ``address payable``
 - ``super``: 继承层次结构中一个级别更高的合约
 - ``selfdestruct(address payable recipient)``: 将所有资金发送到给定地址，并（仅在 Cancun 之前的 EVM 或在创建合约的交易中调用时）销毁合约。
+
 .. index:: type;name, type;creationCode, type;runtimeCode, type;interfaceId, type;min, type;max
 
 类型信息

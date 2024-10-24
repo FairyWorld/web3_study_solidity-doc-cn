@@ -56,8 +56,7 @@ Solidity v0.8.0 重大变更
   4. 在文字和 ``address`` 类型之间的显式转换（例如 ``address(literal)``）的类型为 ``address`` 而不是 ``address payable``。
      可以通过使用显式转换来获得可支付地址类型，即 ``payable(literal)``。
 
-* :ref:`地址文字<address_literals>` 的类型为 ``address`` 而不是 ``address payable``。
-  它们可以通过使用显式转换转换为 ``address payable``，例如 ``payable(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF)``。
+* :ref:`地址字面量 <address_literals>` 的类型为 ``address`` 而不是 ``address payable``。它们可以通过使用显式转换转换为 ``address payable``，例如 ``payable(0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF)``。
 
 * 显式类型转换的新限制。仅当在符号、宽度或类型类别（``int``、``address``、``bytesNN`` 等）中最多有一次变化时，才允许转换。
   要进行多次变化，请使用多次转换。

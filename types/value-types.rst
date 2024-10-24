@@ -211,7 +211,7 @@
     或者使用 ``address(uint160(uint256(b)))``，结果为 ``0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc``。
 
 .. note::
-    符合 `EIP-55 <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md>`_ 的混合大小写十六进制数字会自动被视为 ``address`` 类型的字面量。请参见 :ref:`Address Literals<address_literals>`。
+    符合 `EIP-55 <https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md>`_ 的混合大小写十六进制数字会自动被视为 ``address`` 类型的字面量。请参见 :ref:`地址字面量<address_literals>`。
 
 .. _members-of-addresses:
 
