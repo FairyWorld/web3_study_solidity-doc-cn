@@ -81,7 +81,7 @@ html_context = {
     "github_user": github_user,
     "github_repo": github_repo,
     "github_version": os.getenv("READTHEDOCS_VERSION", "develop"),
-    "conf_py_path": "/docs/",
+    "conf_py_path": "/",
 }
 
 # -- General configuration ------------------------------------------------
