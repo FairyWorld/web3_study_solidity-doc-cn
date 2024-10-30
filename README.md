@@ -13,10 +13,21 @@
 
 ## 本地环境设置
 
-1. 安装Python https://www.python.org/downloads/
+1. 安装Python https://www.python.org/downloads/  
+    版本要求 <= 3.11.10
+    
 2. 安装Sphinx（用于生成文档的工具） https://www.sphinx-doc.org/en/master/usage/installation.html
 
-并运行 `./docs.sh` 来安装依赖并构建项目：
+3. 配置环境变量
+    ```
+    # Github 仓库
+    export RTD_GITHUB_REPO="solidity-doc-cn"
+
+    # Github 仓库用户名
+    export RTD_GITHUB_USER="lbc-team"
+    ```
+
+4. 运行 `./docs.sh` 来安装依赖并构建项目：
 
 ```sh
 ./docs.sh
