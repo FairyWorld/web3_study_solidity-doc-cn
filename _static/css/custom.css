@@ -359,6 +359,7 @@ footer .rst-footer-buttons {
     display: flex;
     justify-content: center;
     gap: 2rem;
+    flex-direction: row-reverse;
 }
 
 /**
